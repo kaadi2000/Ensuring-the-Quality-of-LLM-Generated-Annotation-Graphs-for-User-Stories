@@ -1,0 +1,500 @@
+{
+  "metadata": {
+    "name": "Default JSON validation rules",
+    "version": "1.0",
+    "description": "Editable validation rules for LLM-generated user-story annotation graphs."
+  },
+  "settings": {
+    "invalid_story_threshold_percent": 12.0
+  },
+  "node_pools": {
+    "personas": [
+      "Persona"
+    ],
+    "activities": [
+      "Action.Primary Action",
+      "Action.Secondary Action"
+    ],
+    "entities": [
+      "Entity.Primary Entity",
+      "Entity.Secondary Entity"
+    ]
+  },
+  "rules": [
+    {
+      "id": "R001",
+      "name": "PID required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "PID",
+      "message": "Missing required key: PID"
+    },
+    {
+      "id": "R002",
+      "name": "Text required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Text",
+      "message": "Missing required key: Text"
+    },
+    {
+      "id": "R003",
+      "name": "Persona required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Persona",
+      "message": "Missing required key: Persona"
+    },
+    {
+      "id": "R004",
+      "name": "Action required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Action",
+      "message": "Missing required key: Action"
+    },
+    {
+      "id": "R005",
+      "name": "Entity required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Entity",
+      "message": "Missing required key: Entity"
+    },
+    {
+      "id": "R006",
+      "name": "Benefit required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Benefit",
+      "message": "Missing required key: Benefit"
+    },
+    {
+      "id": "R007",
+      "name": "Triggers required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Triggers",
+      "message": "Missing required key: Triggers"
+    },
+    {
+      "id": "R008",
+      "name": "Targets required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Targets",
+      "message": "Missing required key: Targets"
+    },
+    {
+      "id": "R009",
+      "name": "Contains required",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "required",
+      "path": "Contains",
+      "message": "Missing required key: Contains"
+    },
+    {
+      "id": "R010",
+      "name": "PID must be string",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "type",
+      "path": "PID",
+      "expected_type": "string",
+      "message": "PID must be a string"
+    },
+    {
+      "id": "R011",
+      "name": "Text must be string",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "type",
+      "path": "Text",
+      "expected_type": "string",
+      "message": "Text must be a string"
+    },
+    {
+      "id": "R012",
+      "name": "Benefit must be string",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "type",
+      "path": "Benefit",
+      "expected_type": "string",
+      "message": "Benefit must be a string"
+    },
+    {
+      "id": "R013",
+      "name": "Persona must be list of strings",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "list_of_strings",
+      "path": "Persona",
+      "message": "Persona must be a list of strings"
+    },
+    {
+      "id": "R014",
+      "name": "Primary Action must be list of strings",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "list_of_strings",
+      "path": "Action.Primary Action",
+      "message": "Action['Primary Action'] must be a list of strings"
+    },
+    {
+      "id": "R015",
+      "name": "Secondary Action must be list of strings",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "list_of_strings",
+      "path": "Action.Secondary Action",
+      "message": "Action['Secondary Action'] must be a list of strings"
+    },
+    {
+      "id": "R016",
+      "name": "Primary Entity must be list of strings",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "list_of_strings",
+      "path": "Entity.Primary Entity",
+      "message": "Entity['Primary Entity'] must be a list of strings"
+    },
+    {
+      "id": "R017",
+      "name": "Secondary Entity must be list of strings",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "list_of_strings",
+      "path": "Entity.Secondary Entity",
+      "message": "Entity['Secondary Entity'] must be a list of strings"
+    },
+    {
+      "id": "R018",
+      "name": "Triggers relation shape",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_shape",
+      "path": "Triggers",
+      "message": "Triggers entries must be 2-element lists of strings"
+    },
+    {
+      "id": "R019",
+      "name": "Targets relation shape",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_shape",
+      "path": "Targets",
+      "message": "Targets entries must be 2-element lists of strings"
+    },
+    {
+      "id": "R020",
+      "name": "Contains relation shape",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_shape",
+      "path": "Contains",
+      "message": "Contains entries must be 2-element lists of strings"
+    },
+    {
+      "id": "R021",
+      "name": "Triggers endpoint check",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_endpoint_check",
+      "path": "Triggers",
+      "source_pool": "personas",
+      "target_pool": "activities",
+      "source_kind": "persona",
+      "target_kind": "activity",
+      "message": "Triggers relation endpoints must be Persona -> Activity"
+    },
+    {
+      "id": "R022",
+      "name": "Targets endpoint check",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_endpoint_check",
+      "path": "Targets",
+      "source_pool": "activities",
+      "target_pool": "entities",
+      "source_kind": "activity",
+      "target_kind": "entity",
+      "message": "Targets relation endpoints must be Activity -> Entity"
+    },
+    {
+      "id": "R023",
+      "name": "Contains endpoint check",
+      "enabled": true,
+      "severity": "error",
+      "check_type": "relation_endpoint_check",
+      "path": "Contains",
+      "source_pool": "entities",
+      "target_pool": "entities",
+      "source_kind": "entity",
+      "target_kind": "entity",
+      "message": "Contains relation endpoints must be Entity -> Entity"
+    },
+    {
+      "id": "W001",
+      "name": "Persona list should not be empty",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "not_empty",
+      "path": "Persona",
+      "message": "Persona list is empty"
+    },
+    {
+      "id": "W002",
+      "name": "Primary Action list should not be empty",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "not_empty",
+      "path": "Action.Primary Action",
+      "message": "Primary Action list is empty"
+    },
+    {
+      "id": "W003",
+      "name": "Primary Entity list should not be empty",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "not_empty",
+      "path": "Entity.Primary Entity",
+      "message": "Primary Entity list is empty"
+    },
+    {
+      "id": "W004",
+      "name": "Benefit should not start with so that",
+      "enabled": false,
+      "severity": "warning",
+      "check_type": "regex_not_match",
+      "path": "Benefit",
+      "pattern": "^(?i:so that\\b)",
+      "message": "Benefit still contains leading framing text"
+    },
+    {
+      "id": "W005",
+      "name": "Primary Action should not be helper verb",
+      "enabled": false,
+      "severity": "warning",
+      "check_type": "none_of_values",
+      "path": "Action.Primary Action",
+      "blocked_values": [
+        "want",
+        "have",
+        "be",
+        "be sure",
+        "be able",
+        "need",
+        "can"
+      ],
+      "case_insensitive": true,
+      "message": "Primary Action looks like a helper/generic verb"
+    },
+    {
+      "id": "W006",
+      "name": "Persona exact duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "exact_duplicate_warning",
+      "path": "Persona",
+      "message": "Persona has an exact duplicate label"
+    },
+    {
+      "id": "W007",
+      "name": "Primary Action exact duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "exact_duplicate_warning",
+      "path": "Action.Primary Action",
+      "message": "Primary Action has an exact duplicate label"
+    },
+    {
+      "id": "W008",
+      "name": "Secondary Action exact duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "exact_duplicate_warning",
+      "path": "Action.Secondary Action",
+      "message": "Secondary Action has an exact duplicate label"
+    },
+    {
+      "id": "W009",
+      "name": "Primary Entity exact duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "exact_duplicate_warning",
+      "path": "Entity.Primary Entity",
+      "message": "Primary Entity has an exact duplicate label"
+    },
+    {
+      "id": "W010",
+      "name": "Secondary Entity exact duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "exact_duplicate_warning",
+      "path": "Entity.Secondary Entity",
+      "message": "Secondary Entity has an exact duplicate label"
+    },
+    {
+      "id": "W011",
+      "name": "Persona case duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "case_duplicate_warning",
+      "path": "Persona",
+      "message": "Persona has case-inconsistent duplicates"
+    },
+    {
+      "id": "W012",
+      "name": "Primary Action case duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "case_duplicate_warning",
+      "path": "Action.Primary Action",
+      "message": "Primary Action has case-inconsistent duplicates"
+    },
+    {
+      "id": "W013",
+      "name": "Secondary Action case duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "case_duplicate_warning",
+      "path": "Action.Secondary Action",
+      "message": "Secondary Action has case-inconsistent duplicates"
+    },
+    {
+      "id": "W014",
+      "name": "Primary Entity case duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "case_duplicate_warning",
+      "path": "Entity.Primary Entity",
+      "message": "Primary Entity has case-inconsistent duplicates"
+    },
+    {
+      "id": "W015",
+      "name": "Secondary Entity case duplicate warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "case_duplicate_warning",
+      "path": "Entity.Secondary Entity",
+      "message": "Secondary Entity has case-inconsistent duplicates"
+    },
+    {
+      "id": "W016",
+      "name": "Persona suspicious label warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "suspicious_label_warning",
+      "path": "Persona",
+      "suspicious_values": [
+        "when",
+        "it",
+        "thing",
+        "stuff"
+      ],
+      "min_length": 2,
+      "message": "Persona contains a suspicious or very short label"
+    },
+    {
+      "id": "W017",
+      "name": "Primary Action suspicious label warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "suspicious_label_warning",
+      "path": "Action.Primary Action",
+      "suspicious_values": [
+        "when",
+        "it",
+        "thing",
+        "stuff"
+      ],
+      "min_length": 2,
+      "message": "Primary Action contains a suspicious or very short label"
+    },
+    {
+      "id": "W018",
+      "name": "Secondary Action suspicious label warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "suspicious_label_warning",
+      "path": "Action.Secondary Action",
+      "suspicious_values": [
+        "when",
+        "it",
+        "thing",
+        "stuff"
+      ],
+      "min_length": 2,
+      "message": "Secondary Action contains a suspicious or very short label"
+    },
+    {
+      "id": "W019",
+      "name": "Primary Entity suspicious label warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "suspicious_label_warning",
+      "path": "Entity.Primary Entity",
+      "suspicious_values": [
+        "when",
+        "it",
+        "thing",
+        "stuff"
+      ],
+      "min_length": 2,
+      "message": "Primary Entity contains a suspicious or very short label"
+    },
+    {
+      "id": "W020",
+      "name": "Secondary Entity suspicious label warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "suspicious_label_warning",
+      "path": "Entity.Secondary Entity",
+      "suspicious_values": [
+        "when",
+        "it",
+        "thing",
+        "stuff"
+      ],
+      "min_length": 2,
+      "message": "Secondary Entity contains a suspicious or very short label"
+    },
+    {
+      "id": "W021",
+      "name": "Triggers duplicate relation warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "duplicate_relation_warning",
+      "path": "Triggers",
+      "message": "Triggers contains duplicate relation pair"
+    },
+    {
+      "id": "W022",
+      "name": "Targets duplicate relation warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "duplicate_relation_warning",
+      "path": "Targets",
+      "message": "Targets contains duplicate relation pair"
+    },
+    {
+      "id": "W023",
+      "name": "Contains duplicate relation warning",
+      "enabled": true,
+      "severity": "warning",
+      "check_type": "duplicate_relation_warning",
+      "path": "Contains",
+      "message": "Contains contains duplicate relation pair"
+    }
+  ]
+}

@@ -1,1 +1,1 @@
-# Ensuring-the-Quality-of-LLM-Generated-Annotation-Graphs-for-User-Stories
+# Ensuring the Quality of LLM Generated Annotation Graphs for User Stories

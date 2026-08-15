@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "PID",
+      "Text",
+      "Persona",
+      "Action",
+      "Entity",
+      "Benefit",
+      "Triggers",
+      "Targets",
+      "Contains"
+    ],
+    "properties": {
+      "PID": { "type": "string" },
+      "Text": { "type": "string" },
+
+      "Persona": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+
+      "Action": {
+        "type": "object",
+        "required": [
+          "Primary Action",
+          "Secondary Action"
+        ],
+        "properties": {
+          "Primary Action": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "Secondary Action": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "Entity": {
+        "type": "object",
+        "required": [
+          "Primary Entity",
+          "Secondary Entity"
+        ],
+        "properties": {
+          "Primary Entity": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "Secondary Entity": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      },
+
+      "Benefit": {
+        "type": "string"
+      },
+
+      "Triggers": {
+        "$ref": "#/$defs/relationList"
+      },
+
+      "Targets": {
+        "$ref": "#/$defs/relationList"
+      },
+
+      "Contains": {
+        "$ref": "#/$defs/relationList"
+      }
+    },
+    "additionalProperties": false
+  },
+
+  "$defs": {
+    "relationList": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          { "type": "string" },
+          { "type": "string" }
+        ],
+        "items": false,
+        "minItems": 2,
+        "maxItems": 2
+      }
+    }
+  }
+}

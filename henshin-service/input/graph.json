@@ -1,0 +1,34 @@
+{
+  "nodes": {
+    "personas": [
+      "Public User"
+    ],
+    "activities": [
+      "Search"
+    ],
+    "entities": [
+      "Information",
+      "properties"
+    ]
+  },
+  "edges": {
+    "triggers": [
+      {
+        "source": "Public User",
+        "target": "Search"
+      }
+    ],
+    "targets": [
+      {
+        "source": "Search",
+        "target": "Information"
+      }
+    ],
+    "contains": [
+      {
+        "source": "Information",
+        "target": "properties"
+      }
+    ]
+  }
+}
