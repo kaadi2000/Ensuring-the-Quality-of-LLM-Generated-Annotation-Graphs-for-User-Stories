@@ -62,8 +62,4 @@ class GraphVisualizer:
         return '"' + self._escape(f"{node_type}:{label}") + '"'
 
     def _escape(self, value: str) -> str:
-        return (
-            value
-            .replace("\\", "\\\\")
-            .replace('"', '\\"')
-        )
+        return (value.replace("\\", "\\\\").replace('"', '\\"'))

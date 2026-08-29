@@ -75,29 +75,29 @@ app = FastAPI(
     ),
 )
 
+
 class AnnotationPayload(RootModel[list[dict[str, Any]]]):
     pass
+
 
 class ExtractRequest(BaseModel):
     stories: list[str] = Field(min_length=1)
     temperature: float = 0.0
 
 
-
 class PipelineRequest(BaseModel):
     stories: list[str] = Field(min_length=1)
     temperature: float = 0.0
 
-def run_assurance_pipeline(
-    annotations: list[dict[str, Any]]
-) -> dict[str, Any]:
 
-    print("===== PIPELINE FUNCTION CALLED =====")
+def run_assurance_pipeline(annotations: list[dict[str, Any]]) -> dict[str, Any]:
+
+    # print("===== PIPELINE FUNCTION CALLED =====")
 
     run_id = create_run_id()
     print("RUN ID:", run_id)
 
-    # 1. JSON validation
+
     json_result = json_validator.validate(annotations)
 
     if not json_result["valid"]:
@@ -112,7 +112,7 @@ def run_assurance_pipeline(
         }
 
     else:
-        # 2. Graph validation
+
         graph_result = graph_validator.validate(annotations)
 
         if not graph_result["valid"]:
@@ -127,10 +127,8 @@ def run_assurance_pipeline(
             }
 
         else:
-            # 3. Build one graph per story
             internal_graphs = graph_builder.build(annotations)
 
-            # 4. Henshin validation
             henshin_results = []
 
             for graph in internal_graphs:
@@ -169,15 +167,14 @@ def run_assurance_pipeline(
                         },
                     ) from exc
 
-                henshin_results.append({
-                    "pid": graph["pid"],
-                    **result,
-                })
+                henshin_results.append(
+                    {
+                        "pid": graph["pid"],
+                        **result,
+                    }
+                )
 
-            overall_valid = all(
-                result["valid"]
-                for result in henshin_results
-            )
+            overall_valid = all(result["valid"] for result in henshin_results)
 
             pipeline_result = {
                 "run_id": run_id,
@@ -252,7 +249,6 @@ def run_assurance_pipeline(
                     run_id=run_id,
                 )
 
-    # Save exactly once regardless of where validation stopped
     save_json(
         pipeline_result,
         folder="pipeline",
@@ -262,10 +258,9 @@ def run_assurance_pipeline(
 
     return pipeline_result
 
+
 @app.post("/graph/visualize")
-def visualize_graph(
-    payload: AnnotationPayload = Body(...)
-) -> dict[str, Any]:
+def visualize_graph(payload: AnnotationPayload = Body(...)) -> dict[str, Any]:
     annotations = payload.root
 
     schema_result = json_validator.validate(annotations)
@@ -298,10 +293,9 @@ def visualize_graph(
         "dot": dot,
     }
 
+
 @app.post("/graph/visualize/svg")
-def visualize_graph_svg(
-    payload: AnnotationPayload
-) -> Response:
+def visualize_graph_svg(payload: AnnotationPayload) -> Response:
     annotations = payload.root
 
     schema_result = json_validator.validate(annotations)
@@ -334,6 +328,7 @@ def visualize_graph_svg(
         content=svg,
         media_type="image/svg+xml",
     )
+
 
 @app.post("/validate/henshin")
 def validate_henshin(payload: AnnotationPayload) -> dict[str, Any]:
@@ -399,16 +394,18 @@ def validate_henshin(payload: AnnotationPayload) -> dict[str, Any]:
                 },
             ) from exc
 
-        results.append({
-            "pid": graph["pid"],
-            **result,
-        })
+        results.append(
+            {
+                "pid": graph["pid"],
+                **result,
+            }
+        )
 
     return {
         "valid": all(result["valid"] for result in results),
         "results": results,
     }
-    
+
     """ internal_graph = graph_builder.build(annotations)
 
     try:
@@ -439,6 +436,7 @@ def validate_henshin(payload: AnnotationPayload) -> dict[str, Any]:
             },
         ) from exc """
 
+
 @app.exception_handler(RequestValidationError)
 async def request_validation_handler(
     request: Request,
@@ -446,10 +444,7 @@ async def request_validation_handler(
 ) -> JSONResponse:
     errors = exc.errors()
 
-    malformed_json = any(
-        error.get("type") == "json_invalid"
-        for error in errors
-    )
+    malformed_json = any(error.get("type") == "json_invalid" for error in errors)
 
     status_code = 400 if malformed_json else 422
 
@@ -471,12 +466,10 @@ async def request_validation_handler(
         },
     )
 
+
 json_validator = JsonValidator()
 graph_validator = GraphValidator()
 graph_builder = GraphBuilder()
-
-
-
 
 
 def load_schema() -> dict[str, Any]:
@@ -514,7 +507,9 @@ User story:
 """
 
 
-def extract_one(client: OpenAI, story: str, pid: str, temperature: float) -> dict[str, Any]:
+def extract_one(
+    client: OpenAI, story: str, pid: str, temperature: float
+) -> dict[str, Any]:
     response = client.chat.completions.create(
         model=LM_STUDIO_MODEL,
         temperature=temperature,
@@ -536,7 +531,6 @@ def extract_one(client: OpenAI, story: str, pid: str, temperature: float) -> dic
         raise ValueError("The model returned an empty response.")
 
     return json.loads(content.strip())
-
 
 
 def render_graph_svg(dot: str) -> str:
@@ -569,24 +563,22 @@ def render_graph_svg(dot: str) -> str:
             },
         ) from exc
 
-def get_single_graph(
-        annotations: list[dict[str, Any]]
-    ) -> dict[str, Any]:
 
-        graphs = graph_builder.build(annotations)
+def get_single_graph(annotations: list[dict[str, Any]]) -> dict[str, Any]:
 
-        if len(graphs) != 1:
-            raise HTTPException(
-                status_code=400,
-                detail={
-                    "message": (
-                        "This endpoint exports one story graph at a time."
-                    ),
-                    "graph_count": len(graphs),
-                },
-            )
+    graphs = graph_builder.build(annotations)
 
-        return graphs[0]
+    if len(graphs) != 1:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": ("This endpoint exports one story graph at a time."),
+                "graph_count": len(graphs),
+            },
+        )
+
+    return graphs[0]
+
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -693,19 +685,17 @@ def build_graph(payload: AnnotationPayload) -> dict[str, Any]:
 #         },
 #     )
 
-@app.post("/pipeline/json")
-def pipeline_json(
-    payload: AnnotationPayload
-) -> dict[str, Any]:
 
-    result = run_assurance_pipeline(
-        payload.root
-    )
+@app.post("/pipeline/json")
+def pipeline_json(payload: AnnotationPayload) -> dict[str, Any]:
+
+    result = run_assurance_pipeline(payload.root)
 
     return {
         "input_type": "annotation-json",
         **result,
     }
+
 
 @app.post("/pipeline")
 def pipeline(request: PipelineRequest) -> dict[str, Any]:
@@ -717,9 +707,7 @@ def pipeline(request: PipelineRequest) -> dict[str, Any]:
         )
     )
 
-    result = run_assurance_pipeline(
-        extraction["annotations"]
-    )
+    result = run_assurance_pipeline(extraction["annotations"])
 
     return {
         "input_type": "user-stories",
@@ -727,10 +715,9 @@ def pipeline(request: PipelineRequest) -> dict[str, Any]:
         **result,
     }
 
+
 @app.post("/graph/export/dot")
-def export_graph_dot(
-    payload: AnnotationPayload
-) -> Response:
+def export_graph_dot(payload: AnnotationPayload) -> Response:
     annotations = payload.root
 
     schema_result = json_validator.validate(annotations)
@@ -761,15 +748,12 @@ def export_graph_dot(
     return Response(
         content=dot,
         media_type="text/vnd.graphviz",
-        headers={
-            "Content-Disposition": 'attachment; filename="annotation-graph.dot"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="annotation-graph.dot"'},
     )
 
+
 @app.post("/graph/export/svg")
-def export_graph_svg(
-    payload: AnnotationPayload
-) -> Response:
+def export_graph_svg(payload: AnnotationPayload) -> Response:
     annotations = payload.root
 
     schema_result = json_validator.validate(annotations)
@@ -802,17 +786,12 @@ def export_graph_svg(
     return Response(
         content=svg,
         media_type="image/svg+xml",
-        headers={
-            "Content-Disposition": 'attachment; filename="annotation-graph.svg"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="annotation-graph.svg"'},
     )
 
 
-
 @app.post("/graph/export/xmi")
-def export_graph_xmi(
-    payload: AnnotationPayload
-) -> Response:
+def export_graph_xmi(payload: AnnotationPayload) -> Response:
     annotations = payload.root
 
     schema_result = json_validator.validate(annotations)
@@ -877,7 +856,5 @@ def export_graph_xmi(
     return Response(
         content=response.content,
         media_type="application/xml",
-        headers={
-            "Content-Disposition": 'attachment; filename="annotation-graph.xmi"'
-        },
+        headers={"Content-Disposition": 'attachment; filename="annotation-graph.xmi"'},
     )

@@ -29,34 +29,15 @@ class GraphBuilder:
 
         entities.update( normalize_label(value) for value in story["Entity"]["Secondary Entity"] )
 
-        triggers = {
-            (normalize_label(source),normalize_label(target),)
-            for source, target in story["Triggers"]
-        }
+        triggers = { (normalize_label(source),normalize_label(target),) for source, target in story["Triggers"] }
 
-        targets = {
-            (
-                normalize_label(source),
-                normalize_label(target),
-            )
-            for source, target in story["Targets"]
-        }
+        targets = { ( normalize_label(source), normalize_label(target),) for source, target in story["Targets"] }
 
-        contains = {
-            (
-                normalize_label(source),
-                normalize_label(target),
-            )
-            for source, target in story["Contains"]
-        }
+        contains = { ( normalize_label(source), normalize_label(target),) for source, target in story["Contains"] }
 
         return {
             "pid": story["PID"],
-            "nodes": {
-                "personas": sorted(personas),
-                "activities": sorted(activities),
-                "entities": sorted(entities),
-            },
+            "nodes": { "personas": sorted(personas), "activities": sorted(activities), "entities": sorted(entities),},
             "edges": {
                 "triggers": [
                     {
@@ -80,12 +61,5 @@ class GraphBuilder:
                     for source, target in sorted(contains)
                 ],
             },
-            "counts": {
-                "personas": len(personas),
-                "activities": len(activities),
-                "entities": len(entities),
-                "triggers": len(triggers),
-                "targets": len(targets),
-                "contains": len(contains),
-            },
+            "counts": { "personas": len(personas),"activities": len(activities),"entities": len(entities),"triggers": len(triggers),"targets": len(targets), "contains": len(contains), },
         }

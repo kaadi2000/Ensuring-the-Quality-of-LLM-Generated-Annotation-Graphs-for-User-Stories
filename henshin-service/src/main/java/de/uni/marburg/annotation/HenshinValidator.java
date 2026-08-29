@@ -31,9 +31,7 @@ public final class HenshinValidator {
         this.parseUnit = henshinModule.getUnit("Parse");
 
         if (parseUnit == null) {
-            throw new IllegalStateException(
-                    "Henshin unit 'Parse' was not found."
-            );
+            throw new IllegalStateException("Henshin unit 'Parse' was not found.");
         }
     }
 
@@ -42,12 +40,7 @@ public final class HenshinValidator {
         EGraph graph = new EGraphImpl(graphRoot);
 
         UnitApplication application =
-                new UnitApplicationImpl(
-                        engine,
-                        graph,
-                        parseUnit,
-                        null
-                );
+                new UnitApplicationImpl(engine,graph,parseUnit,null);
 
         return application.execute(null);
     }
@@ -55,14 +48,9 @@ public final class HenshinValidator {
     private Module loadHenshinModule() {
 
     URL henshinUrl = Objects.requireNonNull(
-            HenshinValidator.class
-                    .getClassLoader()
-                    .getResource("parsing.henshin"),
-            "parsing.henshin was not found"
-    );
+            HenshinValidator.class.getClassLoader().getResource("parsing.henshin"),"parsing.henshin was not found");
 
-    HenshinResourceSet resourceSet =
-            new HenshinResourceSet();
+    HenshinResourceSet resourceSet = new HenshinResourceSet();
 
     resourceSet.getPackageRegistry().put(
             modelPackage.getNsURI(),
@@ -74,13 +62,10 @@ public final class HenshinValidator {
                     henshinUrl.toExternalForm()
             );
 
-    org.eclipse.emf.ecore.resource.Resource resource =
-            resourceSet.getResource(uri, true);
+    org.eclipse.emf.ecore.resource.Resource resource = resourceSet.getResource(uri, true);
 
     if (resource.getContents().isEmpty()) {
-        throw new IllegalStateException(
-                "parsing.henshin contains no Henshin module."
-        );
+        throw new IllegalStateException("parsing.henshin contains no Henshin module.");
     }
 
     return (Module) resource.getContents().get(0);

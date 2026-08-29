@@ -4,7 +4,6 @@ from typing import Any
 
 from graph.graph_builder import normalize_label
 
-
 SUSPICIOUS_LABELS = {
     "when",
     "it",
@@ -195,26 +194,33 @@ class GraphValidator:
 
             for entity, actions in entity_to_actions.items():
                 if len(actions) > 1:
-                    issues.append({
-                        "severity": "error",
-                        "source": "graph",
-                        "story_index": story_index,
-                        "location": f"$[{story_index}].Targets",
-                        "message": (
-                            f"Entity '{entity}' is targeted by multiple actions: "
-                            f"{sorted(actions)}. "
-                            "The Henshin metamodel allows each Entity to reference only one Action."
-                        ),
-                    })
+                    issues.append(
+                        {
+                            "severity": "error",
+                            "source": "graph",
+                            "story_index": story_index,
+                            "location": f"$[{story_index}].Targets",
+                            "message": (
+                                f"Entity '{entity}' is targeted by multiple actions: "
+                                f"{sorted(actions)}. "
+                                "The Henshin metamodel allows each Entity to reference only one Action."
+                            ),
+                        }
+                    )
 
             checks = [
                 ("Triggers", personas, activities, "persona", "activity"),
                 ("Targets", activities, entities, "activity", "entity"),
                 ("Contains", entities, entities, "entity", "entity"),
             ]
-            
 
-            for relation_name, source_pool, target_pool, source_kind, target_kind in checks:
+            for (
+                relation_name,
+                source_pool,
+                target_pool,
+                source_kind,
+                target_kind,
+            ) in checks:
                 seen_pairs: set[tuple[str, str]] = set()
 
                 for relation_index, pair in enumerate(story[relation_name]):
@@ -253,11 +259,7 @@ class GraphValidator:
         error_count = sum(1 for issue in issues if issue["severity"] == "error")
         warning_count = sum(1 for issue in issues if issue["severity"] == "warning")
         invalid_story_indexes = sorted(
-            {
-                issue["story_index"]
-                for issue in issues
-                if issue["severity"] == "error"
-            }
+            {issue["story_index"] for issue in issues if issue["severity"] == "error"}
         )
 
         return {

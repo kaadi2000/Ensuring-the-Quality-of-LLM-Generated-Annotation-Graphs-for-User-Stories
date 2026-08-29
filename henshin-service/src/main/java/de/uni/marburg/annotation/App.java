@@ -19,87 +19,54 @@ public final class App {
     }
 
     public static void main(String[] args) throws Exception {
-        Resource.Factory.Registry.INSTANCE
-                .getExtensionToFactoryMap()
-                .put("ecore", new EcoreResourceFactoryImpl());
+        Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("ecore", new EcoreResourceFactoryImpl());
 
-        Resource.Factory.Registry.INSTANCE
-                .getExtensionToFactoryMap()
-                .put("xmi", new XMIResourceFactoryImpl());
+        Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 
-        URL metamodelUrl = Objects.requireNonNull(
-                App.class.getClassLoader()
-                        .getResource("annotation.ecore"),
-                "annotation.ecore was not found"
-        );
+        URL metamodelUrl = Objects.requireNonNull(App.class.getClassLoader().getResource("annotation.ecore"), "annotation.ecore was not found");
 
         ResourceSet resourceSet = new ResourceSetImpl();
 
-        Resource metamodelResource = resourceSet.getResource(
-                URI.createURI(metamodelUrl.toString()),
-                true
-        );
+        Resource metamodelResource = resourceSet.getResource(URI.createURI(metamodelUrl.toString()), true);
 
-        EPackage annotationPackage
-                = (EPackage) metamodelResource.getContents().get(0);
+        EPackage annotationPackage = (EPackage) metamodelResource.getContents().get(0);
 
-        resourceSet.getPackageRegistry().put(
-                annotationPackage.getNsURI(),
-                annotationPackage
-        );
+        resourceSet.getPackageRegistry().put(annotationPackage.getNsURI(), annotationPackage);
 
-        GraphModelBuilder builder
-                = new GraphModelBuilder(annotationPackage);
+        GraphModelBuilder builder = new GraphModelBuilder(annotationPackage);
 
         JsonGraphLoader loader = new JsonGraphLoader();
 
-        InternalGraph input = loader.load(
-                java.nio.file.Path.of("input", "graph.json")
-        );
+        InternalGraph input = loader.load(java.nio.file.Path.of("input", "graph.json"));
 
-EObject graph = builder.build(input);
+        EObject graph = builder.build(input);
 
-        HenshinValidator validator =
-        new HenshinValidator(annotationPackage);
+        HenshinValidator validator = new HenshinValidator(annotationPackage);
 
-boolean parsed;
+        boolean parsed;
 
-try {
-    parsed = validator.parse(graph);
-} finally {
-    validator.shutdown();
-}
+        try {
+            parsed = validator.parse(graph);
+        } finally {
+            validator.shutdown();
+        }
 
-System.out.println("Parse successful: " + parsed);
+        System.out.println("Parse successful: " + parsed);
 
-        Resource outputResource = resourceSet.createResource(
-                URI.createFileURI(
-                        "target/annotation-instance.xmi"
-                )
-        );
+        Resource outputResource = resourceSet.createResource(URI.createFileURI("target/annotation-instance.xmi"));
 
-        System.out.println(
-                "Personas: "
-                + graph.eGet(graph.eClass().getEStructuralFeature("personas"))
-        );
+        System.out.println("Personas: "+ graph.eGet(graph.eClass().getEStructuralFeature("personas")));
 
-        System.out.println(
-                "Activities: "
-                + graph.eGet(graph.eClass().getEStructuralFeature("activities"))
-        );
+        System.out.println("Activities: "+ graph.eGet(graph.eClass().getEStructuralFeature("activities")));
 
-        System.out.println(
-                "Entities: "
-                + graph.eGet(graph.eClass().getEStructuralFeature("entities"))
-        );
+        System.out.println("Entities: "+ graph.eGet(graph.eClass().getEStructuralFeature("entities")));
 
         outputResource.getContents().add(graph);
         outputResource.save(Map.of());
 
         System.out.println("Metamodel loaded successfully.");
         System.out.println("Graph instance created successfully.");
-        System.out.println(
-                "Saved to target/annotation-instance.xmi"
-        );
+        System.out.println("Graph instance saved successfully.");
+        System.out.println("Saved to target/annotation-instance.xmi");
     }
 }

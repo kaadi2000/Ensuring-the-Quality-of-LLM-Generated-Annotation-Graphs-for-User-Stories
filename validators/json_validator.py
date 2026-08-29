@@ -6,8 +6,9 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-
-SCHEMA_PATH = Path(__file__).resolve().parents[1] / "schemas" / "annotation_graph.schema.json"
+SCHEMA_PATH = (
+    Path(__file__).resolve().parents[1] / "schemas" / "annotation_graph.schema.json"
+)
 
 
 class JsonValidator:
