@@ -1,7 +1,9 @@
 package de.uni.marburg.annotation;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
@@ -11,8 +13,9 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 public final class GraphModelBuilder {
 
     private final EPackage modelPackage;
+
     private final Map<String, EObject> personas = new HashMap<>();
-    private final Map<String, EObject> activities = new HashMap<>();
+    private final Map<String, EObject> actions = new HashMap<>();
     private final Map<String, EObject> entities = new HashMap<>();
 
     public GraphModelBuilder(EPackage modelPackage) {
@@ -20,6 +23,10 @@ public final class GraphModelBuilder {
     }
 
     public EObject createGraph() {
+        personas.clear();
+        actions.clear();
+        entities.clear();
+
         return create("AnnotationGraph");
     }
 
@@ -27,102 +34,225 @@ public final class GraphModelBuilder {
     public EObject addPersona(EObject graph, String name) {
         EObject persona = createNamed("Persona", name);
 
-        var personasFeature
-                = graph.eClass().getEStructuralFeature("personas");
-
-        ((java.util.List<EObject>) graph.eGet(personasFeature))
-                .add(persona);
+        ((java.util.List<EObject>) graph.eGet(
+                feature(graph, "persona")
+        )).add(persona);
 
         personas.put(name, persona);
+
         return persona;
     }
 
     @SuppressWarnings("unchecked")
-    public EObject addActivity(EObject graph, String name) {
-        EObject activity = createNamed("Activity", name);
+    public EObject addAction(EObject graph, String name) {
+        EObject action = createNamed("Action", name);
 
-        var activitiesFeature
-                = graph.eClass().getEStructuralFeature("activities");
+        ((java.util.List<EObject>) graph.eGet(
+                feature(graph, "action")
+        )).add(action);
 
-        ((java.util.List<EObject>) graph.eGet(activitiesFeature))
-                .add(activity);
+        actions.put(name, action);
 
-        activities.put(name, activity);
-        return activity;
+        return action;
     }
 
-    @SuppressWarnings("unchecked")
-    public EObject addEntity(EObject graph, String name) {
+    public EObject createEntity(String name) {
         EObject entity = createNamed("Entity", name);
 
-        var entitiesFeature
-                = graph.eClass().getEStructuralFeature("entities");
-
-        ((java.util.List<EObject>) graph.eGet(entitiesFeature))
-                .add(entity);
-
         entities.put(name, entity);
+
         return entity;
     }
 
-    public void addTrigger(String personaName, String activityName) {
-        EObject persona = require(personas, personaName, "Persona");
-        EObject activity = require(activities, activityName, "Activity");
-
-        getList(persona, "triggers").add(activity);
+    @SuppressWarnings("unchecked")
+    public void addRootEntity(EObject graph, EObject entity) {
+        ((java.util.List<EObject>) graph.eGet(
+                feature(graph, "entity")
+        )).add(entity);
     }
 
-    public void addTarget(String activityName, String entityName) {
-        EObject activity = require(activities, activityName, "Activity");
-        EObject entity = require(entities, entityName, "Entity");
+    public void addTrigger(
+            String personaName,
+            String actionName
+    ) {
+        EObject persona = require(
+                personas,
+                personaName,
+                "Persona"
+        );
 
-        getList(activity, "targets").add(entity);
+        EObject action = require(
+                actions,
+                actionName,
+                "Action"
+        );
+
+        /*
+         * Persona.triggers has Action.persona as its opposite.
+         *
+         * Adding this reference automatically sets
+         * action.persona as well.
+         */
+        getList(persona, "triggers").add(action);
     }
 
-    public void addContains(String sourceName, String targetName) {
-        EObject source = require(entities, sourceName, "Entity");
-        EObject target = require(entities, targetName, "Entity");
+    public void addTarget(
+            String actionName,
+            String entityName
+    ) {
+        EObject action = require(
+                actions,
+                actionName,
+                "Action"
+        );
 
+        EObject entity = require(
+                entities,
+                entityName,
+                "Entity"
+        );
+
+        /*
+         * Action.targets has Entity.action as its opposite.
+         *
+         * EMF automatically sets entity.action.
+         */
+        getList(action, "targets").add(entity);
+    }
+
+    public void addContains(
+            String sourceName,
+            String targetName
+    ) {
+        EObject source = require(
+                entities,
+                sourceName,
+                "Entity"
+        );
+
+        EObject target = require(
+                entities,
+                targetName,
+                "Entity"
+        );
+
+        /*
+         * contains is a containment reference.
+         *
+         * The target entity therefore becomes structurally
+         * contained by the source entity.
+         */
         getList(source, "contains").add(target);
     }
+
     public EObject build(InternalGraph input) {
+
         EObject graph = createGraph();
 
+        /*
+         * 1. Personas
+         */
         for (String persona : input.nodes().personas()) {
             addPersona(graph, persona);
         }
 
-        for (String activity : input.nodes().activities()) {
-            addActivity(graph, activity);
+        /*
+         * 2. Actions
+         *
+         * Python currently calls these "activities",
+         * but in the professor's Ecore model they are Actions.
+         */
+        for (String action : input.nodes().activities()) {
+            addAction(graph, action);
         }
 
+        /*
+         * 3. Create all entities first.
+         *
+         * Do NOT immediately add all of them to AnnotationGraph,
+         * because contained entities must live below another Entity.
+         */
         for (String entity : input.nodes().entities()) {
-            addEntity(graph, entity);
+            createEntity(entity);
         }
 
-        for (InternalGraph.Edge edge : input.edges().triggers()) {
-            addTrigger(edge.source(), edge.target());
-        }
-
-        for (InternalGraph.Edge edge : input.edges().targets()) {
-            addTarget(edge.source(), edge.target());
-        }
+        /*
+         * Find entities that are contained by another entity.
+         */
+        Set<String> containedEntities = new HashSet<>();
 
         for (InternalGraph.Edge edge : input.edges().contains()) {
-            addContains(edge.source(), edge.target());
+            containedEntities.add(edge.target());
+        }
+
+        /*
+         * Only non-contained entities are root entities of
+         * AnnotationGraph.
+         */
+        for (String entityName : input.nodes().entities()) {
+
+            if (!containedEntities.contains(entityName)) {
+                EObject entity = require(
+                        entities,
+                        entityName,
+                        "Entity"
+                );
+
+                addRootEntity(graph, entity);
+            }
+        }
+
+        /*
+         * 4. Persona -> Action
+         */
+        for (InternalGraph.Edge edge : input.edges().triggers()) {
+            addTrigger(
+                    edge.source(),
+                    edge.target()
+            );
+        }
+
+        /*
+         * 5. Action -> Entity
+         */
+        for (InternalGraph.Edge edge : input.edges().targets()) {
+            addTarget(
+                    edge.source(),
+                    edge.target()
+            );
+        }
+
+        /*
+         * 6. Entity -> Entity containment
+         */
+        for (InternalGraph.Edge edge : input.edges().contains()) {
+            addContains(
+                    edge.source(),
+                    edge.target()
+            );
         }
 
         return graph;
     }
 
-    private EObject createNamed(String className, String name) {
+    private EObject createNamed(
+            String className,
+            String name
+    ) {
         EObject object = create(className);
-        object.eSet(feature(object, "name"), name);
+
+        object.eSet(
+                feature(object, "name"),
+                name
+        );
+
         return object;
     }
 
     private EObject create(String className) {
-        EClass eClass = (EClass) modelPackage.getEClassifier(className);
+
+        EClass eClass =
+                (EClass) modelPackage.getEClassifier(className);
 
         if (eClass == null) {
             throw new IllegalArgumentException(
@@ -130,7 +260,9 @@ public final class GraphModelBuilder {
             );
         }
 
-        return modelPackage.getEFactoryInstance().create(eClass);
+        return modelPackage
+                .getEFactoryInstance()
+                .create(eClass);
     }
 
     @SuppressWarnings("unchecked")
@@ -147,8 +279,9 @@ public final class GraphModelBuilder {
             EObject object,
             String featureName
     ) {
-        EStructuralFeature feature
-                = object.eClass().getEStructuralFeature(featureName);
+        EStructuralFeature feature =
+                object.eClass()
+                        .getEStructuralFeature(featureName);
 
         if (feature == null) {
             throw new IllegalArgumentException(

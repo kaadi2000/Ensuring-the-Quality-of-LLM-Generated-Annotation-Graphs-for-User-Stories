@@ -12,11 +12,11 @@ from fastapi.responses import JSONResponse
 from openai import OpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-from torch import dot
+from graph import graph_builder
 from validators.json_validator import JsonValidator
 from validators.graph_validator import GraphValidator
 from graph.graph_builder import GraphBuilder
-from fastapi import FastAPI, Request
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import httpx
@@ -24,6 +24,12 @@ from graph.graph_visualizer import GraphVisualizer
 from fastapi import Body
 import subprocess
 from fastapi.responses import Response
+from utils.result_writer import (
+    create_run_id,
+    save_json,
+    save_text,
+    save_bytes,
+)
 
 load_dotenv()
 
@@ -86,73 +92,175 @@ def run_assurance_pipeline(
     annotations: list[dict[str, Any]]
 ) -> dict[str, Any]:
 
+    print("===== PIPELINE FUNCTION CALLED =====")
+
+    run_id = create_run_id()
+    print("RUN ID:", run_id)
+
     # 1. JSON validation
     json_result = json_validator.validate(annotations)
 
     if not json_result["valid"]:
-        return {
+        pipeline_result = {
+            "run_id": run_id,
             "stage": "json-validation",
             "valid": False,
             "json_validation": json_result,
             "graph_validation": None,
-            "graph": None,
+            "graphs": None,
             "henshin_validation": None,
         }
 
-    # 2. Graph validation
-    graph_result = graph_validator.validate(annotations)
+    else:
+        # 2. Graph validation
+        graph_result = graph_validator.validate(annotations)
 
-    if not graph_result["valid"]:
-        return {
-            "stage": "graph-validation",
-            "valid": False,
-            "json_validation": json_result,
-            "graph_validation": graph_result,
-            "graph": None,
-            "henshin_validation": None,
-        }
+        if not graph_result["valid"]:
+            pipeline_result = {
+                "run_id": run_id,
+                "stage": "graph-validation",
+                "valid": False,
+                "json_validation": json_result,
+                "graph_validation": graph_result,
+                "graphs": None,
+                "henshin_validation": None,
+            }
 
-    # 3. Build graph
-    internal_graph = graph_builder.build(annotations)
+        else:
+            # 3. Build one graph per story
+            internal_graphs = graph_builder.build(annotations)
 
-    # 4. Henshin validation
-    try:
-        response = httpx.post(
-            HENSHIN_SERVICE_URL,
-            json=internal_graph,
-            timeout=10.0,
-        )
+            # 4. Henshin validation
+            henshin_results = []
 
-        response.raise_for_status()
-        henshin_result = response.json()
+            for graph in internal_graphs:
+                graph_payload = {
+                    "nodes": graph["nodes"],
+                    "edges": graph["edges"],
+                }
 
-    except httpx.ConnectError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "message": "Henshin service is unavailable.",
-                "service": HENSHIN_SERVICE_URL,
-            },
-        ) from exc
+                try:
+                    response = httpx.post(
+                        HENSHIN_SERVICE_URL,
+                        json=graph_payload,
+                        timeout=10.0,
+                    )
 
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "message": "Henshin service returned an error.",
-                "status_code": exc.response.status_code,
-                "response": exc.response.text,
-            },
-        ) from exc
+                    response.raise_for_status()
+                    result = response.json()
 
-    return {
-        "stage": "complete",
-        "valid": henshin_result["valid"],
-        "json_validation": json_result,
-        "graph_validation": graph_result,
-        "graph": internal_graph,
-        "henshin_validation": henshin_result,
-    }
+                except httpx.ConnectError as exc:
+                    raise HTTPException(
+                        status_code=503,
+                        detail={
+                            "message": "Henshin service is unavailable.",
+                            "service": HENSHIN_SERVICE_URL,
+                        },
+                    ) from exc
+
+                except httpx.HTTPStatusError as exc:
+                    raise HTTPException(
+                        status_code=502,
+                        detail={
+                            "message": "Henshin service returned an error.",
+                            "pid": graph["pid"],
+                            "status_code": exc.response.status_code,
+                            "response": exc.response.text,
+                        },
+                    ) from exc
+
+                henshin_results.append({
+                    "pid": graph["pid"],
+                    **result,
+                })
+
+            overall_valid = all(
+                result["valid"]
+                for result in henshin_results
+            )
+
+            pipeline_result = {
+                "run_id": run_id,
+                "stage": "complete",
+                "valid": overall_valid,
+                "json_validation": json_result,
+                "graph_validation": graph_result,
+                "graphs": internal_graphs,
+                "henshin_validation": henshin_results,
+            }
+
+            for index, graph in enumerate(internal_graphs, start=1):
+                pid = graph["pid"]
+                file_prefix = f"{index:03d}_{pid}"
+
+                save_json(
+                    graph,
+                    folder="graphs",
+                    name=f"{file_prefix}_graph",
+                    run_id=run_id,
+                )
+
+                dot = graph_visualizer.to_dot(graph)
+
+                save_text(
+                    dot,
+                    folder="graphs",
+                    name=f"{file_prefix}_graph",
+                    extension="dot",
+                    run_id=run_id,
+                )
+
+                svg = render_graph_svg(dot)
+
+                save_text(
+                    svg,
+                    folder="graphs",
+                    name=f"{file_prefix}_graph",
+                    extension="svg",
+                    run_id=run_id,
+                )
+                graph_payload = {
+                    "nodes": graph["nodes"],
+                    "edges": graph["edges"],
+                }
+
+                xmi_response = httpx.post(
+                    HENSHIN_XMI_URL,
+                    json=graph_payload,
+                    timeout=10.0,
+                )
+
+                xmi_response.raise_for_status()
+
+                save_bytes(
+                    xmi_response.content,
+                    folder="xmi",
+                    name=f"{file_prefix}_graph",
+                    extension="xmi",
+                    run_id=run_id,
+                )
+
+            for index, result in enumerate(henshin_results, start=1):
+                pid = result["pid"]
+
+                file_prefix = f"{index:03d}_{pid}"
+
+                save_json(
+                    result,
+                    folder="validation",
+                    name=f"{file_prefix}_henshin_validation",
+                    run_id=run_id,
+                )
+
+    # Save exactly once regardless of where validation stopped
+    save_json(
+        pipeline_result,
+        folder="pipeline",
+        name="pipeline_result",
+        run_id=run_id,
+    )
+
+    return pipeline_result
 
 @app.post("/graph/visualize")
 def visualize_graph(
@@ -182,7 +290,7 @@ def visualize_graph(
             },
         )
 
-    graph = graph_builder.build(annotations)
+    graph = get_single_graph(annotations)
     dot = graph_visualizer.to_dot(graph)
 
     return {
@@ -218,7 +326,7 @@ def visualize_graph_svg(
             },
         )
 
-    graph = graph_builder.build(annotations)
+    graph = get_single_graph(annotations)
     dot = graph_visualizer.to_dot(graph)
     svg = render_graph_svg(dot)
 
@@ -251,7 +359,57 @@ def validate_henshin(payload: AnnotationPayload) -> dict[str, Any]:
             },
         )
 
-    internal_graph = graph_builder.build(annotations)
+    internal_graphs = graph_builder.build(annotations)
+
+    results = []
+
+    for graph in internal_graphs:
+        graph_payload = {
+            "nodes": graph["nodes"],
+            "edges": graph["edges"],
+        }
+
+        try:
+            response = httpx.post(
+                HENSHIN_SERVICE_URL,
+                json=graph_payload,
+                timeout=10.0,
+            )
+
+            response.raise_for_status()
+            result = response.json()
+
+        except httpx.ConnectError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Henshin service is unavailable.",
+                    "service": HENSHIN_SERVICE_URL,
+                },
+            ) from exc
+
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "message": "Henshin service returned an error.",
+                    "pid": graph["pid"],
+                    "status_code": exc.response.status_code,
+                    "response": exc.response.text,
+                },
+            ) from exc
+
+        results.append({
+            "pid": graph["pid"],
+            **result,
+        })
+
+    return {
+        "valid": all(result["valid"] for result in results),
+        "results": results,
+    }
+    
+    """ internal_graph = graph_builder.build(annotations)
 
     try:
         response = httpx.post(
@@ -279,7 +437,7 @@ def validate_henshin(payload: AnnotationPayload) -> dict[str, Any]:
                 "status_code": exc.response.status_code,
                 "response": exc.response.text,
             },
-        ) from exc
+        ) from exc """
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_handler(
@@ -397,7 +555,7 @@ def render_graph_svg(dot: str) -> str:
         raise HTTPException(
             status_code=500,
             detail={
-                "message": "Graphviz 'dot' executable was not found."
+                "message": "Graphviz 'dot' executable was not found.",
                 "path": GRAPHVIZ_DOT_PATH,
             },
         ) from exc
@@ -411,6 +569,24 @@ def render_graph_svg(dot: str) -> str:
             },
         ) from exc
 
+def get_single_graph(
+        annotations: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+
+        graphs = graph_builder.build(annotations)
+
+        if len(graphs) != 1:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": (
+                        "This endpoint exports one story graph at a time."
+                    ),
+                    "graph_count": len(graphs),
+                },
+            )
+
+        return graphs[0]
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -499,7 +675,7 @@ def build_graph(payload: AnnotationPayload) -> dict[str, Any]:
 
     return {
         "valid": True,
-        "graph": graph_builder.build(payload.root),
+        "graphs": graph_builder.build(payload.root),
     }
 
 
@@ -579,7 +755,7 @@ def export_graph_dot(
             },
         )
 
-    graph = graph_builder.build(annotations)
+    graph = get_single_graph(annotations)
     dot = graph_visualizer.to_dot(graph)
 
     return Response(
@@ -618,7 +794,7 @@ def export_graph_svg(
             },
         )
 
-    graph = graph_builder.build(annotations)
+    graph = get_single_graph(annotations)
 
     dot = graph_visualizer.to_dot(graph)
     svg = render_graph_svg(dot)
@@ -630,6 +806,8 @@ def export_graph_svg(
             "Content-Disposition": 'attachment; filename="annotation-graph.svg"'
         },
     )
+
+
 
 @app.post("/graph/export/xmi")
 def export_graph_xmi(
@@ -659,7 +837,12 @@ def export_graph_xmi(
             },
         )
 
-    internal_graph = graph_builder.build(annotations)
+    graph = get_single_graph(annotations)
+
+    internal_graph = {
+        "nodes": graph["nodes"],
+        "edges": graph["edges"],
+    }
 
     try:
         print("Calling Henshin XMI service...")

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="parsingAnnotationGraphs" nsURI="http://www.example.org/parsingAnnotationGraphs"
+    nsPrefix="parsingAnnotationGraphs">
+  <eClassifiers xsi:type="ecore:EClass" name="AnnotationGraph">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="persona" upperBound="-1"
+        eType="#//Persona" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="action" upperBound="-1"
+        eType="#//Action" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="entity" upperBound="-1"
+        eType="#//Entity" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Persona">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="triggers" upperBound="-1"
+        eType="#//Action" eOpposite="#//Action/persona"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Action">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="persona" eType="#//Persona"
+        eOpposite="#//Persona/triggers"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="targets" upperBound="-1"
+        eType="#//Entity" eOpposite="#//Entity/action"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="GoalAction" eSuperTypes="#//Action"/>
+  <eClassifiers xsi:type="ecore:EClass" name="BenefitAction" eSuperTypes="#//Action"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Entity">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="action" eType="#//Action"
+        eOpposite="#//Action/targets"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contains" upperBound="-1"
+        eType="#//Entity" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="GoalEntity" eSuperTypes="#//Entity"/>
+  <eClassifiers xsi:type="ecore:EClass" name="BenefitEntity" eSuperTypes="#//Entity"/>
+</ecore:EPackage>

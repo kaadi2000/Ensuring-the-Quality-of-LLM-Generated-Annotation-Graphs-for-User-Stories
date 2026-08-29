@@ -96,29 +96,24 @@ public final class HenshinHttpServer {
             HenshinValidator validator
                     = new HenshinValidator(annotationPackage);
 
-            int selfContainmentViolations;
+            boolean parsed;
 
-            try {
-                selfContainmentViolations
-                        = validator.countSelfContainmentViolations(graph);
-            } finally {
-                validator.shutdown();
-            }
+try {
+    parsed = validator.parse(graph);
+} finally {
+    validator.shutdown();
+}
 
-            boolean valid = selfContainmentViolations == 0;
+boolean valid = parsed;
 
             sendJson(
-                    exchange,
-                    200,
-                    Map.of(
-                            "valid", valid,
-                            "error_count", selfContainmentViolations,
-                            "violations", Map.of(
-                                    "self_containment",
-                                    selfContainmentViolations
-                            )
-                    )
-            );
+        exchange,
+        200,
+        Map.of(
+                "valid", valid,
+                "parsed", parsed
+        )
+);
 
         } catch (IllegalArgumentException exception) {
             sendJson(
@@ -285,8 +280,8 @@ public final class HenshinHttpServer {
         URL metamodelUrl = Objects.requireNonNull(
                 HenshinHttpServer.class
                         .getClassLoader()
-                        .getResource("annotation.ecore"),
-                "annotation.ecore was not found"
+                        .getResource("parsingAnnotationGraphs.ecore"),
+                "parsingAnnotationGraphs.ecore was not found"
         );
 
         ResourceSet resourceSet = new ResourceSetImpl();

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<henshin:Module xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:henshin="http://www.eclipse.org/emf/2011/Henshin" xmi:id="_0JoKEFgcEfC7pZxK5SjMLg">
+  <imports href="parsingAnnotationGraphs.ecore#/"/>
+  <units xsi:type="henshin:Rule" xmi:id="_-DAC8FgcEfC7pZxK5SjMLg" name="deletePersona">
+    <lhs xmi:id="_-DlRwFgcEfC7pZxK5SjMLg" name="Lhs">
+      <nodes xmi:id="__-MkUFgcEfC7pZxK5SjMLg" outgoing="_CKgq4FgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+      <nodes xmi:id="_AgR9sFgdEfC7pZxK5SjMLg" incoming="_CKgq4FgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Persona"/>
+      </nodes>
+      <edges xmi:id="_CKgq4FgdEfC7pZxK5SjMLg" source="__-MkUFgcEfC7pZxK5SjMLg" target="_AgR9sFgdEfC7pZxK5SjMLg" index="">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph/persona"/>
+      </edges>
+    </lhs>
+    <rhs xmi:id="_-DlRwVgcEfC7pZxK5SjMLg" name="Rhs">
+      <nodes xmi:id="__-MkUVgcEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+    </rhs>
+    <mappings xmi:id="__-NycFgcEfC7pZxK5SjMLg" origin="__-MkUFgcEfC7pZxK5SjMLg" image="__-MkUVgcEfC7pZxK5SjMLg"/>
+  </units>
+  <units xsi:type="henshin:Rule" xmi:id="_JxWgcFgdEfC7pZxK5SjMLg" name="deleteAction">
+    <lhs xmi:id="_JxZjwFgdEfC7pZxK5SjMLg" name="Lhs">
+      <nodes xmi:id="_ONWKoFgdEfC7pZxK5SjMLg" outgoing="_UP9NUFgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+      <nodes xmi:id="_PY_eYFgdEfC7pZxK5SjMLg" incoming="_UP9NUFgdEfC7pZxK5SjMLg _VBLO4FgdEfC7pZxK5SjMLg" outgoing="_VwLp8FgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Action"/>
+      </nodes>
+      <nodes xmi:id="_P9LJgFgdEfC7pZxK5SjMLg" incoming="_VwLp8FgdEfC7pZxK5SjMLg" outgoing="_VBLO4FgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Persona"/>
+      </nodes>
+      <edges xmi:id="_UP9NUFgdEfC7pZxK5SjMLg" source="_ONWKoFgdEfC7pZxK5SjMLg" target="_PY_eYFgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph/action"/>
+      </edges>
+      <edges xmi:id="_VBLO4FgdEfC7pZxK5SjMLg" source="_P9LJgFgdEfC7pZxK5SjMLg" target="_PY_eYFgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Persona/triggers"/>
+      </edges>
+      <edges xmi:id="_VwLp8FgdEfC7pZxK5SjMLg" source="_PY_eYFgdEfC7pZxK5SjMLg" target="_P9LJgFgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Action/persona"/>
+      </edges>
+    </lhs>
+    <rhs xmi:id="_JxZjwVgdEfC7pZxK5SjMLg" name="Rhs">
+      <nodes xmi:id="_ONWKoVgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+      <nodes xmi:id="_P9LwkFgdEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Persona"/>
+      </nodes>
+    </rhs>
+    <mappings xmi:id="_ONWKolgdEfC7pZxK5SjMLg" origin="_ONWKoFgdEfC7pZxK5SjMLg" image="_ONWKoVgdEfC7pZxK5SjMLg"/>
+    <mappings xmi:id="_P9LwkVgdEfC7pZxK5SjMLg" origin="_P9LJgFgdEfC7pZxK5SjMLg" image="_P9LwkFgdEfC7pZxK5SjMLg"/>
+  </units>
+  <units xsi:type="henshin:Rule" xmi:id="_UO_ukFgeEfC7pZxK5SjMLg" name="deleteRootEntity">
+    <lhs xmi:id="_UO_ukVgeEfC7pZxK5SjMLg" name="Lhs">
+      <nodes xmi:id="_UO_uklgeEfC7pZxK5SjMLg" outgoing="_UO_ulVgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+      <nodes xmi:id="_UO_uk1geEfC7pZxK5SjMLg" incoming="_UO_ul1geEfC7pZxK5SjMLg" outgoing="_UO_ullgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Action"/>
+      </nodes>
+      <nodes xmi:id="_UO_ulFgeEfC7pZxK5SjMLg" incoming="_UO_ulVgeEfC7pZxK5SjMLg _UO_ullgeEfC7pZxK5SjMLg" outgoing="_UO_ul1geEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+      <edges xmi:id="_UO_ulVgeEfC7pZxK5SjMLg" source="_UO_uklgeEfC7pZxK5SjMLg" target="_UO_ulFgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph/entity"/>
+      </edges>
+      <edges xmi:id="_UO_ullgeEfC7pZxK5SjMLg" source="_UO_uk1geEfC7pZxK5SjMLg" target="_UO_ulFgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Action/targets"/>
+      </edges>
+      <edges xmi:id="_UO_ul1geEfC7pZxK5SjMLg" source="_UO_ulFgeEfC7pZxK5SjMLg" target="_UO_uk1geEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity/action"/>
+      </edges>
+    </lhs>
+    <rhs xmi:id="_UO_umFgeEfC7pZxK5SjMLg" name="Rhs">
+      <nodes xmi:id="_UO_umVgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//AnnotationGraph"/>
+      </nodes>
+      <nodes xmi:id="_UO_umlgeEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Action"/>
+      </nodes>
+    </rhs>
+    <mappings xmi:id="_UO_um1geEfC7pZxK5SjMLg" origin="_UO_uklgeEfC7pZxK5SjMLg" image="_UO_umVgeEfC7pZxK5SjMLg"/>
+    <mappings xmi:id="_UO_unFgeEfC7pZxK5SjMLg" origin="_UO_uk1geEfC7pZxK5SjMLg" image="_UO_umlgeEfC7pZxK5SjMLg"/>
+  </units>
+  <units xsi:type="henshin:IndependentUnit" xmi:id="_Gv4hQFgiEfC7pZxK5SjMLg" name="ApplyOneRule" subUnits="_-DAC8FgcEfC7pZxK5SjMLg _JxWgcFgdEfC7pZxK5SjMLg _nHbsQKq0EfCbCtS7aoN9Jg _UO_ukFgeEfC7pZxK5SjMLg"/>
+  <units xsi:type="henshin:LoopUnit" xmi:id="_i5AvIFgiEfC7pZxK5SjMLg" name="Parse" subUnit="_Gv4hQFgiEfC7pZxK5SjMLg"/>
+  <units xsi:type="henshin:Rule" xmi:id="_vVA5AJMLEfC7pZxK5SjMLg" name="deleteAllContainedEntities">
+    <parameters xmi:id="_XA-Q0JPQEfC7pZxK5SjMLg" name="e" kind="VAR"/>
+    <parameters xmi:id="_Y6tZoJPQEfC7pZxK5SjMLg" name="f" kind="VAR"/>
+    <lhs xmi:id="_vVDVQJMLEfC7pZxK5SjMLg" name="Lhs">
+      <nodes xmi:id="_y-C1MJMLEfC7pZxK5SjMLg" name="e">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+    </lhs>
+    <rhs xmi:id="_vVDVQZMLEfC7pZxK5SjMLg" name="Rhs">
+      <nodes xmi:id="_y-DcQJMLEfC7pZxK5SjMLg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+    </rhs>
+    <mappings xmi:id="_y-DcQZMLEfC7pZxK5SjMLg" origin="_y-C1MJMLEfC7pZxK5SjMLg" image="_y-DcQJMLEfC7pZxK5SjMLg"/>
+    <multiRules xmi:id="_6oCsYJPPEfC7pZxK5SjMLg">
+      <parameters xmi:id="_XA-34JPQEfC7pZxK5SjMLg" name="e" kind="VAR"/>
+      <parameters xmi:id="_Y6uAsJPQEfC7pZxK5SjMLg" name="f" kind="VAR"/>
+      <lhs xmi:id="_6oG90JPPEfC7pZxK5SjMLg" name="Lhs">
+        <nodes xmi:id="_6oHk4ZPPEfC7pZxK5SjMLg" name="e" outgoing="_4ZWnUJMLEfC7pZxK5SjMLg">
+          <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+        </nodes>
+        <nodes xmi:id="_zNMrgJMLEfC7pZxK5SjMLg" name="f" incoming="_4ZWnUJMLEfC7pZxK5SjMLg">
+          <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+        </nodes>
+        <edges xmi:id="_4ZWnUJMLEfC7pZxK5SjMLg" source="_6oHk4ZPPEfC7pZxK5SjMLg" target="_zNMrgJMLEfC7pZxK5SjMLg">
+          <type href="parsingAnnotationGraphs.ecore#//Entity/contains"/>
+        </edges>
+      </lhs>
+      <rhs xmi:id="_6oG90ZPPEfC7pZxK5SjMLg" name="Rhs">
+        <nodes xmi:id="_6oG90pPPEfC7pZxK5SjMLg">
+          <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+        </nodes>
+      </rhs>
+      <mappings xmi:id="_6oHk5pPPEfC7pZxK5SjMLg" origin="_6oHk4ZPPEfC7pZxK5SjMLg" image="_6oG90pPPEfC7pZxK5SjMLg"/>
+      <multiMappings xmi:id="_6oHk4JPPEfC7pZxK5SjMLg" origin="_y-DcQJMLEfC7pZxK5SjMLg" image="_6oG90pPPEfC7pZxK5SjMLg"/>
+      <multiMappings xmi:id="_6oHk4pPPEfC7pZxK5SjMLg" origin="_y-C1MJMLEfC7pZxK5SjMLg" image="_6oHk4ZPPEfC7pZxK5SjMLg"/>
+    </multiRules>
+  </units>
+  <units xsi:type="henshin:Rule" xmi:id="_nHbsQKq0EfCbCtS7aoN9Jg" name="deleteContainedEntity">
+    <lhs xmi:id="_nHevkKq0EfCbCtS7aoN9Jg" name="Lhs">
+      <nodes xmi:id="_t1HsQKq0EfCbCtS7aoN9Jg" outgoing="_vo1FkKq0EfCbCtS7aoN9Jg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+      <nodes xmi:id="_u4AFkKq0EfCbCtS7aoN9Jg" incoming="_vo1FkKq0EfCbCtS7aoN9Jg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+      <edges xmi:id="_vo1FkKq0EfCbCtS7aoN9Jg" source="_t1HsQKq0EfCbCtS7aoN9Jg" target="_u4AFkKq0EfCbCtS7aoN9Jg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity/contains"/>
+      </edges>
+    </lhs>
+    <rhs xmi:id="_nHevkaq0EfCbCtS7aoN9Jg" name="Rhs">
+      <nodes xmi:id="_t1ITUKq0EfCbCtS7aoN9Jg">
+        <type href="parsingAnnotationGraphs.ecore#//Entity"/>
+      </nodes>
+    </rhs>
+    <mappings xmi:id="_t1ITUaq0EfCbCtS7aoN9Jg" origin="_t1HsQKq0EfCbCtS7aoN9Jg" image="_t1ITUKq0EfCbCtS7aoN9Jg"/>
+  </units>
+</henshin:Module>

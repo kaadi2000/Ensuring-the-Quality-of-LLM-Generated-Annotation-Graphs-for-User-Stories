@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage
+    xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore"
+    name="annotation"
+    nsURI="https://www.uni-marburg.de/annotation"
+    nsPrefix="annotation">
+
+    <eClassifiers
+        xsi:type="ecore:EClass"
+        name="NamedElement"
+        abstract="true">
+
+        <eStructuralFeatures
+            xsi:type="ecore:EAttribute"
+            name="name"
+            lowerBound="1"
+            eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    </eClassifiers>
+
+    <eClassifiers
+        xsi:type="ecore:EClass"
+        name="AnnotationGraph">
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="personas"
+            upperBound="-1"
+            containment="true"
+            eType="#//Persona"/>
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="activities"
+            upperBound="-1"
+            containment="true"
+            eType="#//Activity"/>
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="entities"
+            upperBound="-1"
+            containment="true"
+            eType="#//Entity"/>
+    </eClassifiers>
+
+    <eClassifiers
+        xsi:type="ecore:EClass"
+        name="Persona"
+        eSuperTypes="#//NamedElement">
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="triggers"
+            upperBound="-1"
+            eType="#//Activity"/>
+    </eClassifiers>
+
+    <eClassifiers
+        xsi:type="ecore:EClass"
+        name="Activity"
+        eSuperTypes="#//NamedElement">
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="targets"
+            upperBound="-1"
+            eType="#//Entity"/>
+    </eClassifiers>
+
+    <eClassifiers
+        xsi:type="ecore:EClass"
+        name="Entity"
+        eSuperTypes="#//NamedElement">
+
+        <eStructuralFeatures
+            xsi:type="ecore:EReference"
+            name="contains"
+            upperBound="-1"
+            eType="#//Entity"/>
+    </eClassifiers>
+
+</ecore:EPackage>

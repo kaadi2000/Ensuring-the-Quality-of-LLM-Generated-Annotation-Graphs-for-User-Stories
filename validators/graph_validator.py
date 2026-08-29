@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from graph.graph_builder import normalize_label
+
 
 SUSPICIOUS_LABELS = {
     "when",
@@ -161,11 +163,56 @@ class GraphValidator:
             entities = set(story["Entity"]["Primary Entity"])
             entities.update(story["Entity"]["Secondary Entity"])
 
+            action_to_personas: dict[str, set[str]] = {}
+
+            for source, target in story["Triggers"]:
+                source_norm = normalize_label(source)
+                target_norm = normalize_label(target)
+
+                action_to_personas.setdefault(target_norm, set()).add(source_norm)
+
+            for action, personas_for_action in action_to_personas.items():
+                if len(personas_for_action) > 1:
+                    self._add_issue(
+                        issues,
+                        severity="error",
+                        story_index=story_index,
+                        location=f"$[{story_index}].Triggers",
+                        message=(
+                            f"Action {action!r} is triggered by multiple personas: "
+                            f"{sorted(personas_for_action)!r}. "
+                            "The metamodel allows each Action to reference only one Persona."
+                        ),
+                    )
+
+            entity_to_actions: dict[str, set[str]] = {}
+
+            for source, target in story["Targets"]:
+                source_norm = normalize_label(source)
+                target_norm = normalize_label(target)
+
+                entity_to_actions.setdefault(target_norm, set()).add(source_norm)
+
+            for entity, actions in entity_to_actions.items():
+                if len(actions) > 1:
+                    issues.append({
+                        "severity": "error",
+                        "source": "graph",
+                        "story_index": story_index,
+                        "location": f"$[{story_index}].Targets",
+                        "message": (
+                            f"Entity '{entity}' is targeted by multiple actions: "
+                            f"{sorted(actions)}. "
+                            "The Henshin metamodel allows each Entity to reference only one Action."
+                        ),
+                    })
+
             checks = [
                 ("Triggers", personas, activities, "persona", "activity"),
                 ("Targets", activities, entities, "activity", "entity"),
                 ("Contains", entities, entities, "entity", "entity"),
             ]
+            
 
             for relation_name, source_pool, target_pool, source_kind, target_kind in checks:
                 seen_pairs: set[tuple[str, str]] = set()

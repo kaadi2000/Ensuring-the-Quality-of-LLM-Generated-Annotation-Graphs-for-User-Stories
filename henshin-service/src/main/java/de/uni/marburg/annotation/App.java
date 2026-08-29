@@ -59,17 +59,18 @@ public final class App {
 
 EObject graph = builder.build(input);
 
-        HenshinValidator validator
-                = new HenshinValidator(annotationPackage);
+        HenshinValidator validator =
+        new HenshinValidator(annotationPackage);
 
-        int violations
-                = validator.countSelfContainmentViolations(graph);
+boolean parsed;
 
-        System.out.println(
-                "Self-containment violations: " + violations
-        );
+try {
+    parsed = validator.parse(graph);
+} finally {
+    validator.shutdown();
+}
 
-        validator.shutdown();
+System.out.println("Parse successful: " + parsed);
 
         Resource outputResource = resourceSet.createResource(
                 URI.createFileURI(

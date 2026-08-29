@@ -8,47 +8,50 @@ def normalize_label(label: str) -> str:
 
 
 class GraphBuilder:
-    def build(self, annotations: list[dict[str, Any]]) -> dict[str, Any]:
-        personas: set[str] = set()
-        activities: set[str] = set()
-        entities: set[str] = set()
-        triggers: set[tuple[str, str]] = set()
-        targets: set[tuple[str, str]] = set()
-        contains: set[tuple[str, str]] = set()
+
+    def build(self, annotations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        graphs: list[dict[str, Any]] = []
 
         for story in annotations:
-            personas.update(normalize_label(value) for value in story["Persona"])
-            activities.update(
-                normalize_label(value)
-                for value in story["Action"]["Primary Action"]
-            )
-            activities.update(
-                normalize_label(value)
-                for value in story["Action"]["Secondary Action"]
-            )
-            entities.update(
-                normalize_label(value)
-                for value in story["Entity"]["Primary Entity"]
-            )
-            entities.update(
-                normalize_label(value)
-                for value in story["Entity"]["Secondary Entity"]
-            )
+            graphs.append(self._build_story_graph(story))
 
-            triggers.update(
-                (normalize_label(source), normalize_label(target))
-                for source, target in story["Triggers"]
+        return graphs
+
+    def _build_story_graph(self,story: dict[str, Any],) -> dict[str, Any]:
+
+        personas = { normalize_label(value) for value in story["Persona"] }
+
+        activities = { normalize_label(value) for value in story["Action"]["Primary Action"] }
+
+        activities.update( normalize_label(value) for value in story["Action"]["Secondary Action"])
+
+        entities = { normalize_label(value) for value in story["Entity"]["Primary Entity"] }
+
+        entities.update( normalize_label(value) for value in story["Entity"]["Secondary Entity"] )
+
+        triggers = {
+            (normalize_label(source),normalize_label(target),)
+            for source, target in story["Triggers"]
+        }
+
+        targets = {
+            (
+                normalize_label(source),
+                normalize_label(target),
             )
-            targets.update(
-                (normalize_label(source), normalize_label(target))
-                for source, target in story["Targets"]
+            for source, target in story["Targets"]
+        }
+
+        contains = {
+            (
+                normalize_label(source),
+                normalize_label(target),
             )
-            contains.update(
-                (normalize_label(source), normalize_label(target))
-                for source, target in story["Contains"]
-            )
+            for source, target in story["Contains"]
+        }
 
         return {
+            "pid": story["PID"],
             "nodes": {
                 "personas": sorted(personas),
                 "activities": sorted(activities),
@@ -56,20 +59,28 @@ class GraphBuilder:
             },
             "edges": {
                 "triggers": [
-                    {"source": source, "target": target}
+                    {
+                        "source": source,
+                        "target": target,
+                    }
                     for source, target in sorted(triggers)
                 ],
                 "targets": [
-                    {"source": source, "target": target}
+                    {
+                        "source": source,
+                        "target": target,
+                    }
                     for source, target in sorted(targets)
                 ],
                 "contains": [
-                    {"source": source, "target": target}
+                    {
+                        "source": source,
+                        "target": target,
+                    }
                     for source, target in sorted(contains)
                 ],
             },
             "counts": {
-                "stories": len(annotations),
                 "personas": len(personas),
                 "activities": len(activities),
                 "entities": len(entities),

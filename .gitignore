@@ -50,7 +50,12 @@ dalpiaz2018/
 .bloop/
 .idea/
 *.class
-
+.metadata/
+.settings/
+.project
+.classpath
+outputs/*
+!outputs/.gitkeep
 
 # Translations
 *.mo
