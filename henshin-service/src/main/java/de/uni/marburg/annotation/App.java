@@ -1,8 +1,6 @@
 package de.uni.marburg.annotation;
 
-import java.net.URL;
 import java.util.Map;
-import java.util.Objects;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
@@ -23,17 +21,22 @@ public final class App {
 
         Resource.Factory.Registry.INSTANCE.getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 
-        URL metamodelUrl = Objects.requireNonNull(App.class.getClassLoader().getResource("annotation.ecore"), "annotation.ecore was not found");
+        HenshinValidator validator
+                = new HenshinValidator();
 
-        ResourceSet resourceSet = new ResourceSetImpl();
+        EPackage annotationPackage
+                = validator.getModelPackage();
 
-        Resource metamodelResource = resourceSet.getResource(URI.createURI(metamodelUrl.toString()), true);
+        ResourceSet resourceSet
+                = new ResourceSetImpl();
 
-        EPackage annotationPackage = (EPackage) metamodelResource.getContents().get(0);
+        resourceSet.getPackageRegistry().put(
+                annotationPackage.getNsURI(),
+                annotationPackage
+        );
 
-        resourceSet.getPackageRegistry().put(annotationPackage.getNsURI(), annotationPackage);
-
-        GraphModelBuilder builder = new GraphModelBuilder(annotationPackage);
+        GraphModelBuilder builder
+                = new GraphModelBuilder(annotationPackage);
 
         JsonGraphLoader loader = new JsonGraphLoader();
 
@@ -41,25 +44,53 @@ public final class App {
 
         EObject graph = builder.build(input);
 
-        HenshinValidator validator = new HenshinValidator(annotationPackage);
-
-        boolean parsed;
+        //HenshinValidator validator = new HenshinValidator();
+        HenshinValidator.ParseResult result;
 
         try {
-            parsed = validator.parse(graph);
+            result = validator.parse(graph);
         } finally {
             validator.shutdown();
         }
 
-        System.out.println("Parse successful: " + parsed);
+        System.out.println("Parse executed: " + result.isParsed());
+        System.out.println("Fully parsed: " + result.isFullyParsed());
+        System.out.println("Valid: " + result.isValid());
+
+        System.out.println(
+                "Remaining: personas="
+                + result.getRemainingPersonas()
+                + ", actions="
+                + result.getRemainingActions()
+                + ", entities="
+                + result.getRemainingEntities()
+        );
 
         Resource outputResource = resourceSet.createResource(URI.createFileURI("target/annotation-instance.xmi"));
 
-        System.out.println("Personas: "+ graph.eGet(graph.eClass().getEStructuralFeature("personas")));
+        System.out.println(
+                "Personas: "
+                + graph.eGet(
+                        graph.eClass()
+                                .getEStructuralFeature("persona")
+                )
+        );
 
-        System.out.println("Activities: "+ graph.eGet(graph.eClass().getEStructuralFeature("activities")));
+        System.out.println(
+                "Actions: "
+                + graph.eGet(
+                        graph.eClass()
+                                .getEStructuralFeature("action")
+                )
+        );
 
-        System.out.println("Entities: "+ graph.eGet(graph.eClass().getEStructuralFeature("entities")));
+        System.out.println(
+                "Entities: "
+                + graph.eGet(
+                        graph.eClass()
+                                .getEStructuralFeature("entity")
+                )
+        );
 
         outputResource.getContents().add(graph);
         outputResource.save(Map.of());

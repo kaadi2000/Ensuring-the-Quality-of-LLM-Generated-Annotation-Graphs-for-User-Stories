@@ -1,0 +1,40 @@
+{
+  "PID": "#TEST-CONTAINS#",
+  "Text": "#TEST-CONTAINS# As a User, I want to view an order, so that I can inspect its item.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "view"
+    ],
+    "Secondary Action": []
+  },
+  "Entity": {
+    "Primary Entity": [
+      "order"
+    ],
+    "Secondary Entity": [
+      "item"
+    ]
+  },
+  "Benefit": "I can inspect its item",
+  "Triggers": [
+    [
+      "User",
+      "view"
+    ]
+  ],
+  "Targets": [
+    [
+      "view",
+      "order"
+    ]
+  ],
+  "Contains": [
+    [
+      "order",
+      "item"
+    ]
+  ]
+}

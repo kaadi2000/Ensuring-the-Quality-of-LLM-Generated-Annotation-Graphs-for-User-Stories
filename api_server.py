@@ -91,163 +91,236 @@ class PipelineRequest(BaseModel):
 
 
 def run_assurance_pipeline(annotations: list[dict[str, Any]]) -> dict[str, Any]:
-
-    # print("===== PIPELINE FUNCTION CALLED =====")
-
     run_id = create_run_id()
     print("RUN ID:", run_id)
 
+    story_results = []
 
-    json_result = json_validator.validate(annotations)
+    json_validation_passed_count = 0
+    graph_validation_passed_count = 0
+    henshin_validation_passed_count = 0
 
-    if not json_result["valid"]:
-        pipeline_result = {
-            "run_id": run_id,
-            "stage": "json-validation",
-            "valid": False,
-            "json_validation": json_result,
-            "graph_validation": None,
-            "graphs": None,
-            "henshin_validation": None,
-        }
+    for index, story in enumerate(annotations, start=1):
 
-    else:
+        pid = story.get("PID", f"STORY-{index:03d}")
+        file_prefix = f"{index:03d}_{pid}"
 
-        graph_result = graph_validator.validate(annotations)
+        print(f"Processing story {index}: {pid}")
+
+        json_result = json_validator.validate([story])
+
+        save_json(
+            json_result,
+            folder="validation",
+            name=f"{file_prefix}_json_validation",
+            run_id=run_id,
+        )
+
+        if not json_result["valid"]:
+            story_results.append(
+                {
+                    "index": index - 1,
+                    "pid": pid,
+                    "stage": "json-validation",
+                    "valid": False,
+                    "json_validation": json_result,
+                    "graph_validation": None,
+                    "graph": None,
+                    "henshin_validation": None,
+                }
+            )
+
+            # do NOT stop the batch
+            continue
+        json_validation_passed_count += 1
+
+        graph_result = graph_validator.validate([story])
+
+        save_json(
+            graph_result,
+            folder="validation",
+            name=f"{file_prefix}_graph_validation",
+            run_id=run_id,
+        )
 
         if not graph_result["valid"]:
-            pipeline_result = {
-                "run_id": run_id,
-                "stage": "graph-validation",
-                "valid": False,
-                "json_validation": json_result,
-                "graph_validation": graph_result,
-                "graphs": None,
-                "henshin_validation": None,
-            }
-
-        else:
-            internal_graphs = graph_builder.build(annotations)
-
-            henshin_results = []
-
-            for graph in internal_graphs:
-                graph_payload = {
-                    "nodes": graph["nodes"],
-                    "edges": graph["edges"],
+            story_results.append(
+                {
+                    "index": index - 1,
+                    "pid": pid,
+                    "stage": "graph-validation",
+                    "valid": False,
+                    "json_validation": json_result,
+                    "graph_validation": graph_result,
+                    "graph": None,
+                    "henshin_validation": None,
                 }
+            )
 
-                try:
-                    response = httpx.post(
-                        HENSHIN_SERVICE_URL,
-                        json=graph_payload,
-                        timeout=10.0,
-                    )
+            continue
+        graph_validation_passed_count += 1
 
-                    response.raise_for_status()
-                    result = response.json()
+        built_graphs = graph_builder.build([story])
 
-                except httpx.ConnectError as exc:
-                    raise HTTPException(
-                        status_code=503,
-                        detail={
-                            "message": "Henshin service is unavailable.",
-                            "service": HENSHIN_SERVICE_URL,
-                        },
-                    ) from exc
+        if len(built_graphs) != 1:
+            raise RuntimeError(
+                f"Expected exactly one graph for story {pid}, "
+                f"but received {len(built_graphs)}."
+            )
 
-                except httpx.HTTPStatusError as exc:
-                    raise HTTPException(
-                        status_code=502,
-                        detail={
-                            "message": "Henshin service returned an error.",
-                            "pid": graph["pid"],
-                            "status_code": exc.response.status_code,
-                            "response": exc.response.text,
-                        },
-                    ) from exc
+        graph = built_graphs[0]
 
-                henshin_results.append(
-                    {
-                        "pid": graph["pid"],
-                        **result,
-                    }
-                )
+        graph_payload = {
+            "nodes": graph["nodes"],
+            "edges": graph["edges"],
+        }
+        save_json(
+            graph,
+            folder="graphs",
+            name=f"{file_prefix}_graph",
+            run_id=run_id,
+        )
 
-            overall_valid = all(result["valid"] for result in henshin_results)
+        dot = graph_visualizer.to_dot(graph)
 
-            pipeline_result = {
-                "run_id": run_id,
+        save_text(
+            dot,
+            folder="graphs",
+            name=f"{file_prefix}_graph",
+            extension="dot",
+            run_id=run_id,
+        )
+        svg = render_graph_svg(dot)
+
+        save_text(
+            svg,
+            folder="graphs",
+            name=f"{file_prefix}_graph",
+            extension="svg",
+            run_id=run_id,
+        )
+
+        try:
+            xmi_response = httpx.post(
+                HENSHIN_XMI_URL,
+                json=graph_payload,
+                timeout=10.0,
+            )
+
+            xmi_response.raise_for_status()
+
+            save_bytes(
+                xmi_response.content,
+                folder="xmi",
+                name=f"{file_prefix}_graph",
+                extension="xmi",
+                run_id=run_id,
+            )
+
+        except httpx.ConnectError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Henshin XMI service is unavailable.",
+                    "service": HENSHIN_XMI_URL,
+                },
+            ) from exc
+
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "message": "Henshin XMI service returned an error.",
+                    "pid": pid,
+                    "status_code": exc.response.status_code,
+                    "response": exc.response.text,
+                },
+            ) from exc
+
+        try:
+            response = httpx.post(
+                HENSHIN_SERVICE_URL,
+                json=graph_payload,
+                timeout=10.0,
+            )
+
+            response.raise_for_status()
+            henshin_result = response.json()
+
+        except httpx.ConnectError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Henshin service is unavailable.",
+                    "service": HENSHIN_SERVICE_URL,
+                },
+            ) from exc
+
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "message": "Henshin service returned an error.",
+                    "pid": pid,
+                    "status_code": exc.response.status_code,
+                    "response": exc.response.text,
+                },
+            ) from exc
+
+        henshin_with_pid = {
+            "pid": pid,
+            **henshin_result,
+        }
+
+        save_json(
+            henshin_with_pid,
+            folder="validation",
+            name=f"{file_prefix}_henshin_validation",
+            run_id=run_id,
+        )
+
+        if not henshin_result["valid"]:
+            story_results.append(
+                {
+                    "index": index - 1,
+                    "pid": pid,
+                    "stage": "henshin-validation",
+                    "valid": False,
+                    "json_validation": json_result,
+                    "graph_validation": graph_result,
+                    "graph": graph,
+                    "henshin_validation": henshin_with_pid,
+                }
+            )
+
+            continue
+        henshin_validation_passed_count += 1
+
+
+
+
+        story_results.append(
+            {
+                "index": index - 1,
+                "pid": pid,
                 "stage": "complete",
-                "valid": overall_valid,
+                "valid": True,
                 "json_validation": json_result,
                 "graph_validation": graph_result,
-                "graphs": internal_graphs,
-                "henshin_validation": henshin_results,
+                "graph": graph,
+                "henshin_validation": henshin_with_pid,
             }
+        )
 
-            for index, graph in enumerate(internal_graphs, start=1):
-                pid = graph["pid"]
-                file_prefix = f"{index:03d}_{pid}"
-
-                save_json(
-                    graph,
-                    folder="graphs",
-                    name=f"{file_prefix}_graph",
-                    run_id=run_id,
-                )
-
-                dot = graph_visualizer.to_dot(graph)
-
-                save_text(
-                    dot,
-                    folder="graphs",
-                    name=f"{file_prefix}_graph",
-                    extension="dot",
-                    run_id=run_id,
-                )
-
-                svg = render_graph_svg(dot)
-
-                save_text(
-                    svg,
-                    folder="graphs",
-                    name=f"{file_prefix}_graph",
-                    extension="svg",
-                    run_id=run_id,
-                )
-                graph_payload = {
-                    "nodes": graph["nodes"],
-                    "edges": graph["edges"],
-                }
-
-                xmi_response = httpx.post(
-                    HENSHIN_XMI_URL,
-                    json=graph_payload,
-                    timeout=10.0,
-                )
-
-                xmi_response.raise_for_status()
-
-                save_bytes(
-                    xmi_response.content,
-                    folder="xmi",
-                    name=f"{file_prefix}_graph",
-                    extension="xmi",
-                    run_id=run_id,
-                )
-
-            for index, result in enumerate(henshin_results, start=1):
-                pid = result["pid"]
-
-                file_prefix = f"{index:03d}_{pid}"
-
-                save_json(
-                    result,
-                    folder="validation",
-                    name=f"{file_prefix}_henshin_validation",
-                    run_id=run_id,
-                )
+    pipeline_result = {
+        "run_id": run_id,
+        "stage": "complete",
+        "story_count": len(annotations),
+        "json_validation_passed_count": json_validation_passed_count,
+        "graph_validation_passed_count": graph_validation_passed_count,
+        "henshin_validation_passed_count": henshin_validation_passed_count,
+        "stories": story_results,
+    }
 
     save_json(
         pipeline_result,
@@ -257,7 +330,6 @@ def run_assurance_pipeline(annotations: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     return pipeline_result
-
 
 @app.post("/graph/visualize")
 def visualize_graph(payload: AnnotationPayload = Body(...)) -> dict[str, Any]:

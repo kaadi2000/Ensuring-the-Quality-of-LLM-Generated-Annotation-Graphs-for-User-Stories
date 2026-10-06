@@ -1,146 +1,218 @@
-# Ensuring the Quality of LLM Generated Annotation Graphs for User Stories# Ensuring the Quality of LLM-Generated Annotation Graphs for User Stories
+# Ensuring the Quality of LLM-Generated Annotation Graphs for User Stories
 
-This project provides a quality assurance pipeline for annotation graphs generated from agile user stories.
+This project implements a quality-assurance pipeline for annotation graphs derived from agile user stories.
 
-The pipeline supports both raw user stories processed through an LLM and directly provided annotation JSON. Each user story is handled independently and produces its own annotation graph.
+It supports two entry paths:
 
-## Overview
+1. **Raw user stories**, which can first be converted to annotation JSON by a local LLM.
+2. **Existing annotation JSON**, which can be sent directly into the assurance pipeline.
+
+Each user story is processed independently. Stories are never merged into one shared graph.
+
+---
+
+## Pipeline Flow
 
 ```text
-User Story
-   ↓
-Optional LLM Extraction
-   ↓
+Raw User Story
+      │
+      ├── optional LLM extraction
+      ↓
 Annotation JSON
-   ↓
+      ↓
 JSON Schema Validation
-   ↓
+      ↓
 Graph Consistency Validation
-   ↓
+      ↓
 Internal Graph Construction
-   ↓
-EMF Model Construction
-   ↓
-Henshin Parsing
-   ↓
-Graph / XMI / SVG / DOT Output
+      ↓
+Save Graph Artifacts
+  ├── JSON
+  ├── DOT
+  ├── SVG
+  └── XMI
+      ↓
+Henshin Parsing / Validation
+      ↓
+Per-story Result
 ```
 
-Multiple user stories are never merged into one graph:
+For a batch:
 
 ```text
-Story 1 → Graph 1
-Story 2 → Graph 2
-Story 3 → Graph 3
+Story 1 → Graph 1 → Henshin result 1
+Story 2 → Graph 2 → Henshin result 2
+Story 3 → Graph 3 → Henshin result 3
 ```
+
+The graphs are never merged.
+
+### Per-story fault isolation
+
+Each story stops only at the stage it fails.
+
+```text
+JSON validation fails
+→ stop that story
+→ continue with the next story
+
+JSON passes
+→ graph validation fails
+→ stop that story
+→ continue with the next story
+
+Graph validation passes
+→ build graph
+→ save JSON / DOT / SVG / XMI
+→ run Henshin validation
+
+Henshin validation fails
+→ keep the already generated graph artifacts
+→ record the Henshin failure
+→ continue with the next story
+```
+
+This means a Henshin failure does **not** remove or block graph artifacts that were already created after successful graph validation.
+
+---
+
+## Pipeline Summary
+
+A completed pipeline run reports how many stories passed each assurance stage independently.
+
+Example:
+
+```json
+{
+  "story_count": 5,
+  "json_validation_passed_count": 4,
+  "graph_validation_passed_count": 3,
+  "henshin_validation_passed_count": 2
+}
+```
+
+This provides more information than a single batch-level pass/fail result.
+
+---
 
 ## Main Features
 
-- LLM-based extraction of annotation graphs from user stories
-- Direct processing of annotation JSON without using the LLM
+- Optional LLM-based annotation extraction from user stories
+- Direct processing of existing annotation JSON
 - JSON Schema validation
 - Graph consistency validation
-- Validation against Ecore cardinalities
+- Ecore cardinality checks
 - One independent graph per user story
-- EMF model construction
-- Henshin-based graph parsing
-- DOT graph generation
-- SVG graph visualization
-- XMI export
-- Automatic result storage for pipeline runs
+- Internal graph construction
+- DOT export
+- SVG rendering with Graphviz
+- XMI model construction
+- Henshin-based parsing and validation
+- Per-story fault isolation
+- Independent pass counts for JSON, graph, and Henshin validation
+- Persistent run artifacts
+- Automated pytest test suite
 
-## Project Structure
-
-```text
-.
-├── api_server.py
-├── app.py
-├── .env
-├── schemas/
-│   └── annotation_graph.schema.json
-├── validators/
-│   ├── json_validator.py
-│   └── graph_validator.py
-├── graph/
-│   ├── graph_builder.py
-│   └── graph_visualizer.py
-├── utils/
-│   └── result_writer.py
-├── henshin-service/
-│   ├── pom.xml
-│   └── src/
-│       └── main/
-│           ├── java/
-│           │   └── de/uni/marburg/annotation/
-│           └── resources/
-│               ├── parsing.henshin
-│               ├── parsing.henshin_diagram
-│               ├── parsingAnnotationGraphs.ecore
-│               └── ...
-└── outputs/
-```
+---
 
 ## Annotation Format
+
+Each annotation has the following structure:
 
 ```json
 {
   "PID": "#G01#",
   "Text": "As a public user, I want to search for information.",
-  "Persona": ["public user"],
+  "Persona": [
+    "public user"
+  ],
   "Action": {
-    "Primary Action": ["search"],
+    "Primary Action": [
+      "search"
+    ],
     "Secondary Action": []
   },
   "Entity": {
-    "Primary Entity": ["information"],
+    "Primary Entity": [
+      "information"
+    ],
     "Secondary Entity": []
   },
   "Benefit": "",
   "Triggers": [
-    ["public user", "search"]
+    [
+      "public user",
+      "search"
+    ]
   ],
   "Targets": [
-    ["search", "information"]
+    [
+      "search",
+      "information"
+    ]
   ],
   "Contains": []
 }
 ```
 
+---
+
 ## Validation
 
-### JSON Validation
+### 1. JSON Schema Validation
 
-JSON Schema validation checks the structure and types of the annotation data, including:
+JSON validation checks the structure and types of annotation data.
+
+Examples include:
 
 - required fields
-- correct field types
-- valid relation structure
-- correct `Action` and `Entity` object structure
+- field types
+- top-level structure
+- `Persona` list structure
+- `Action` object structure
+- `Entity` object structure
+- relation list structure
+- relation entries containing exactly two strings
 
-### Graph Validation
+A story that fails this stage is not passed to graph validation.
 
-Graph validation checks semantic consistency between nodes and relations.
+### 2. Graph Consistency Validation
+
+Graph validation checks whether relation endpoints correspond to declared graph nodes.
 
 Examples:
 
-- Trigger source must exist in `Persona`
-- Trigger target must exist in `Action`
-- Target source must exist in `Action`
-- Target target must exist in `Entity`
-- Contains source and target must exist in `Entity`
-- Duplicate relations generate warnings
-- Suspicious labels generate warnings
+```text
+Triggers:
+Persona → Action
 
-The validator also checks cardinalities imposed by the Ecore metamodel.
+Targets:
+Action → Entity
 
-For example:
+Contains:
+Entity → Entity
+```
+
+The validator checks, among other things:
+
+- Trigger sources exist in `Persona`
+- Trigger targets exist in `Action`
+- Target sources exist in `Action`
+- Target targets exist in `Entity`
+- Contains sources exist in `Entity`
+- Contains targets exist in `Entity`
+- duplicate labels and relations
+- suspicious labels
+- Ecore cardinality constraints
+
+The Ecore model contains single-valued opposite references:
 
 ```text
 Action.persona → one Persona
 Entity.action  → one Action
 ```
 
-Therefore relations such as:
+Therefore structures such as:
 
 ```text
 admin   → approve
@@ -154,23 +226,120 @@ create → report
 review → report
 ```
 
-are invalid because they violate single-valued opposite references in the metamodel.
+violate the metamodel cardinality and are rejected by graph validation.
+
+---
+
+## Graph Construction
+
+A graph is built only after both JSON validation and graph validation succeed.
+
+The internal representation contains:
+
+```text
+nodes:
+  personas
+  activities
+  entities
+
+edges:
+  triggers
+  targets
+  contains
+```
+
+Each story produces exactly one internal graph.
+
+---
+
+## Generated Artifacts
+
+Once graph validation succeeds, the pipeline saves the graph before running Henshin validation.
+
+For each graph-valid story the pipeline generates:
+
+```text
+graph JSON
+DOT
+SVG
+XMI
+```
+
+This ordering is intentional:
+
+```text
+Graph Validation
+      ↓
+Graph Construction
+      ↓
+JSON / DOT / SVG / XMI
+      ↓
+Henshin Validation
+```
+
+Therefore graph artifacts remain available even if Henshin parsing later fails.
+
+---
+
+## EMF / XMI Model
+
+The Java service converts the internal graph representation into an EMF model conforming to:
+
+```text
+parsingAnnotationGraphs.ecore
+```
+
+The metamodel contains:
+
+```text
+AnnotationGraph
+├── persona*
+├── action*
+└── entity*
+
+Persona
+└── triggers* ↔ Action.persona
+
+Action
+└── targets* ↔ Entity.action
+
+Entity
+└── contains*
+```
+
+An example serialized model is:
+
+```xml
+<parsingAnnotationGraphs:AnnotationGraph ...>
+    <persona triggers="//@action.0" name="user"/>
+    <action persona="//@persona.0"
+            targets="//@entity.0"
+            name="view"/>
+    <entity action="//@action.0" name="order">
+        <contains name="item"/>
+    </entity>
+</parsingAnnotationGraphs:AnnotationGraph>
+```
+
+Contained entities are serialized below their parent entity rather than duplicated as root entities.
+
+---
 
 ## Henshin Parsing
 
-The Java service uses the provided Henshin transformation:
+The Java service uses the supplied Henshin transformation:
 
 ```text
 parsing.henshin
 ```
 
-The main transformation unit is:
+The main parsing unit is:
 
 ```text
 Parse
 ```
 
-The transformation repeatedly applies parsing rules such as:
+It repeatedly applies rules including:
 
 ```text
 deletePersona
@@ -179,33 +348,110 @@ deleteRootEntity
 deleteContainedEntity
 ```
 
-A successfully parsed annotation graph is reduced to an empty `AnnotationGraph` root.
+A graph is considered fully parsed when the transformation succeeds and no personas, actions, or entities remain.
 
-Example transformed XMI:
+Conceptually:
 
-```xml
-<?xml version="1.0" encoding="ASCII"?>
-<parsingAnnotationGraphs:AnnotationGraph
-    xmi:version="2.0"
-    xmlns:xmi="http://www.omg.org/XMI"
-    xmlns:parsingAnnotationGraphs="http://www.example.org/parsingAnnotationGraphs"/>
+```text
+before parsing:
+
+AnnotationGraph
+├── Persona
+├── Action
+└── Entity
+
+after successful parsing:
+
+AnnotationGraph
 ```
+
+A Henshin failure is recorded as a separate assurance result. It does not mean the preceding JSON or graph stages were incorrect.
+
+---
+
+## Project Structure
+
+The relevant source structure is:
+
+```text
+.
+├── app.py
+├── api_server.py
+├── pytest.ini
+├── README.md
+├── Validation Rules.md
+├── sample_stories.txt
+│
+├── data/
+│
+├── graph/
+│   ├── graph_builder.py
+│   └── graph_visualizer.py
+│
+├── schemas/
+│   └── annotation_graph.schema.json
+│
+├── validators/
+│   ├── json_validator.py
+│   └── graph_validator.py
+│
+├── utils/
+│   └── result_writer.py
+│
+├── tests/
+│   ├── conftest.py
+│   ├── fixtures/
+│   ├── test_json_validator.py
+│   ├── test_graph_validator.py
+│   ├── test_graph_builder.py
+│   ├── test_pipeline.py
+│   └── test_henshin_live.py
+│
+└── henshin-service/
+    ├── pom.xml
+    └── src/
+        └── main/
+            ├── java/
+            │   └── de/uni/marburg/annotation/
+            │       ├── GraphModelBuilder.java
+            │       ├── HenshinHttpServer.java
+            │       ├── HenshinValidator.java
+            │       ├── InternalGraph.java
+            │       └── ...
+            │
+            └── resources/
+                ├── parsing.henshin
+                ├── parsing.henshin_diagram
+                ├── parsingAnnotationGraphs.ecore
+                ├── parsingAnnotationGraphs.genmodel
+                └── ...
+```
+
+Generated folders such as `outputs/`, `target/`, caches, and local environment files should not be treated as source code.
+
+---
 
 ## Running the Project
 
-### 1. Start the Henshin Java Service
+### 1. Start the Java / Henshin Service
 
-From `henshin-service/`:
+From:
+
+```text
+henshin-service/
+```
+
+run:
 
 ```powershell
 mvn clean package
 mvn exec:java "-Dexec.mainClass=de.uni.marburg.annotation.HenshinHttpServer"
 ```
 
-The Henshin service runs on:
+The Java service runs on:
 
 ```text
-http://localhost:8081
+http://127.0.0.1:8081
 ```
 
 ### 2. Start the Python API
@@ -219,45 +465,40 @@ python -m uvicorn app:app --reload
 The API runs on:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8000
 ```
 
-Swagger documentation:
+Swagger UI:
 
 ```text
-http://localhost:8000/docs
+http://127.0.0.1:8000/docs
 ```
+
+---
 
 ## Main API Endpoints
 
-### Health
+### General
 
 ```text
 GET /health
-```
-
-### JSON Schema
-
-```text
 GET /schema
 ```
 
-### LLM Extraction
+### Extraction
 
 ```text
 POST /extract
 ```
 
-### JSON Validation
+Uses the configured local LLM to convert raw user stories into annotation JSON.
+
+### Validation
 
 ```text
 POST /validate/json
-```
-
-### Graph Validation
-
-```text
 POST /validate/graph
+POST /validate/henshin
 ```
 
 ### Graph Construction
@@ -266,17 +507,9 @@ POST /validate/graph
 POST /build-graph
 ```
 
-Returns one graph per user story.
+Returns one independent graph per supplied story.
 
-### Henshin Validation
-
-```text
-POST /validate/henshin
-```
-
-Each user story graph is sent separately to the Henshin service.
-
-### Full Pipeline With LLM
+### Full Pipeline With LLM Extraction
 
 ```text
 POST /pipeline
@@ -285,15 +518,16 @@ POST /pipeline
 Flow:
 
 ```text
-Raw User Stories
-→ LLM
+Raw User Story
+→ LLM Extraction
 → JSON Validation
 → Graph Validation
 → Graph Construction
-→ Henshin
+→ Save Artifacts
+→ Henshin Validation
 ```
 
-### Full Pipeline Without LLM
+### Full Pipeline With Existing Annotation JSON
 
 ```text
 POST /pipeline/json
@@ -306,129 +540,145 @@ Annotation JSON
 → JSON Validation
 → Graph Validation
 → Graph Construction
-→ Henshin
+→ Save Artifacts
+→ Henshin Validation
 ```
 
-## Graph Export
-
-Export endpoints operate on one user story at a time.
-
-### DOT
+### Visualization and Export
 
 ```text
+POST /graph/visualize
+POST /graph/visualize/svg
 POST /graph/export/dot
-```
-
-### SVG
-
-```text
 POST /graph/export/svg
-```
-
-### XMI
-
-```text
 POST /graph/export/xmi
 ```
 
-The XMI output conforms to:
+The single-graph export endpoints operate on one story graph at a time.
 
-```text
-parsingAnnotationGraphs.ecore
-```
-
-Example:
-
-```xml
-<parsingAnnotationGraphs:AnnotationGraph ...>
-    <persona triggers="//@action.0" name="user"/>
-    <action persona="//@persona.0" targets="//@entity.0" name="view"/>
-    <entity action="//@action.0" name="order">
-        <contains name="item"/>
-    </entity>
-</parsingAnnotationGraphs:AnnotationGraph>
-```
+---
 
 ## Result Storage
 
-Pipeline runs can automatically store generated results under:
+Pipeline results are stored under:
 
 ```text
-outputs/
+outputs/<run_id>/
 ```
 
-Each run receives a unique timestamp-based run ID.
-
-Example:
+A typical run contains:
 
 ```text
 outputs/
-└── 20260829_154523_482731/
+└── <run_id>/
     ├── pipeline/
     │   └── pipeline_result.json
+    │
     ├── validation/
-    │   ├── json_validation.json
-    │   ├── graph_validation.json
-    │   ├── 001_G01_henshin_validation.json
-    │   └── 002_G02_henshin_validation.json
+    │   ├── 001_<PID>_json_validation.json
+    │   ├── 001_<PID>_graph_validation.json
+    │   └── 001_<PID>_henshin_validation.json
+    │
     ├── graphs/
-    │   ├── 001_G01_graph.json
-    │   ├── 001_G01_graph.dot
-    │   ├── 001_G01_graph.svg
-    │   ├── 002_G02_graph.json
-    │   ├── 002_G02_graph.dot
-    │   └── 002_G02_graph.svg
+    │   ├── 001_<PID>_graph.json
+    │   ├── 001_<PID>_graph.dot
+    │   └── 001_<PID>_graph.svg
+    │
     └── xmi/
-        ├── 001_G01_graph.xmi
-        └── 002_G02_graph.xmi
+        └── 001_<PID>_graph.xmi
 ```
 
-The story index is included in filenames so that multiple stories using the same PID do not overwrite each other.
+The numerical story prefix prevents files from being overwritten when multiple stories use the same PID.
+
+---
 
 ## Environment Configuration
 
-Configuration is stored in `.env`.
+Local configuration can be supplied through `.env`.
 
 Example:
 
 ```env
-LM_STUDIO_BASE_URL=http://localhost:1234/v1
+LM_STUDIO_BASE_URL=http://127.0.0.1:1234/v1
 LM_STUDIO_API_KEY=lm-studio
 LM_STUDIO_MODEL=openai/gpt-oss-20b
 
-HENSHIN_BASE_URL=http://localhost:8081
+HENSHIN_BASE_URL=http://127.0.0.1:8081
 
 GRAPHVIZ_DOT_PATH=C:\Program Files\Graphviz\bin\dot.exe
 ```
 
-Install the environment dependency with:
+The `.env` file is local configuration and should not be committed to Git.
 
-```powershell
-pip install python-dotenv
-```
+---
 
 ## Graphviz
 
-Graphviz is required for SVG rendering.
+Graphviz is required for SVG generation.
 
-The `dot` executable must either be available in `PATH` or configured through:
+The project uses the `dot` executable. On Windows it can be configured through:
 
 ```env
 GRAPHVIZ_DOT_PATH=C:\Program Files\Graphviz\bin\dot.exe
 ```
 
+---
+
+## Tests
+
+The Python test suite uses `pytest`.
+
+Run all tests from the project root:
+
+```powershell
+python -m pytest -v
+```
+
+The suite covers:
+
+- valid JSON annotations
+- missing required schema fields
+- invalid graph relation endpoints
+- Ecore cardinality violations
+- one graph per story
+- `Contains` relations
+- graph-valid but Henshin-invalid cases
+- successful Henshin parsing
+- JSON / graph / Henshin pass counters
+- mixed-batch fault isolation
+- graph artifact persistence
+- duplicate PID output naming
+
+### Live Henshin Integration Test
+
+The Henshin integration test requires the Java service to be running.
+
+If the test is configured to use the `HENSHIN_LIVE` environment variable, enable it before running the suite.
+
+Command Prompt:
+
+```cmd
+set HENSHIN_LIVE=1
+python -m pytest -v
+```
+
+PowerShell:
+
+```powershell
+$env:HENSHIN_LIVE="1"
+python -m pytest -v
+```
+
+The live integration test verifies that a valid internal graph can be fully parsed by the real Java/Henshin service.
+
+---
 ## Henshin Diagram
 
-The graphical Henshin model can be opened in Eclipse using:
+The supplied graphical Henshin model can be opened in Eclipse using:
 
 ```text
 parsing.henshin
 parsing.henshin_diagram
 ```
 
-The Henshin Eclipse plugin and required Papyrus/GMF tooling must be installed for the graphical diagram editor.
-
-
-## Notes
-
-The `outputs/` directory contains generated run artifacts and should normally not be committed to Git.
+The appropriate Henshin / Eclipse modeling tooling is required for editing the graphical transformation model.

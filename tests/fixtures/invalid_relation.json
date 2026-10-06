@@ -1,0 +1,33 @@
+{
+  "PID": "#TEST-BAD-REL#",
+  "Text": "#TEST-BAD-REL# As a User, I want to search information.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "search"
+    ],
+    "Secondary Action": []
+  },
+  "Entity": {
+    "Primary Entity": [
+      "information"
+    ],
+    "Secondary Entity": []
+  },
+  "Benefit": "I can find it",
+  "Triggers": [
+    [
+      "User",
+      "unknown_action"
+    ]
+  ],
+  "Targets": [
+    [
+      "search",
+      "information"
+    ]
+  ],
+  "Contains": []
+}

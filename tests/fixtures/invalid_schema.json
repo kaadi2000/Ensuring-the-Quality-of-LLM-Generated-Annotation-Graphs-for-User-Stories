@@ -1,0 +1,32 @@
+{
+  "PID": "#TEST-BAD-SCHEMA#",
+  "Text": "#TEST-BAD-SCHEMA# As a User, I want to search information.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "search"
+    ],
+    "Secondary Action": []
+  },
+  "Entity": {
+    "Primary Entity": [
+      "information"
+    ],
+    "Secondary Entity": []
+  },
+  "Triggers": [
+    [
+      "User",
+      "search"
+    ]
+  ],
+  "Targets": [
+    [
+      "search",
+      "information"
+    ]
+  ],
+  "Contains": []
+}

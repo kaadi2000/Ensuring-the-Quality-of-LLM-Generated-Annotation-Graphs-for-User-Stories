@@ -1,0 +1,41 @@
+{
+  "PID": "#TEST-HENSHIN-FAIL#",
+  "Text": "#TEST-HENSHIN-FAIL# As a User, I want to search information, so that I can obtain details.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "search"
+    ],
+    "Secondary Action": [
+      "obtain"
+    ]
+  },
+  "Entity": {
+    "Primary Entity": [
+      "information"
+    ],
+    "Secondary Entity": [
+      "details"
+    ]
+  },
+  "Benefit": "I can obtain details",
+  "Triggers": [
+    [
+      "User",
+      "search"
+    ]
+  ],
+  "Targets": [
+    [
+      "search",
+      "information"
+    ],
+    [
+      "obtain",
+      "details"
+    ]
+  ],
+  "Contains": []
+}

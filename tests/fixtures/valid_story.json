@@ -1,0 +1,33 @@
+{
+  "PID": "#TEST-VALID#",
+  "Text": "#TEST-VALID# As a User, I want to search information, so that I can find what I need.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "search"
+    ],
+    "Secondary Action": []
+  },
+  "Entity": {
+    "Primary Entity": [
+      "information"
+    ],
+    "Secondary Entity": []
+  },
+  "Benefit": "I can find what I need",
+  "Triggers": [
+    [
+      "User",
+      "search"
+    ]
+  ],
+  "Targets": [
+    [
+      "search",
+      "information"
+    ]
+  ],
+  "Contains": []
+}

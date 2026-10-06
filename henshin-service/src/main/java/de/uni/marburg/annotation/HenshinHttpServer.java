@@ -71,26 +71,52 @@ public final class HenshinHttpServer {
         }
 
         try {
-            InternalGraph input = OBJECT_MAPPER.readValue(exchange.getRequestBody(), InternalGraph.class);
-            GraphModelBuilder builder = new GraphModelBuilder(annotationPackage);
-            EObject graph = builder.build(input);
+            InternalGraph input = OBJECT_MAPPER.readValue(
+                    exchange.getRequestBody(),
+                    InternalGraph.class
+            );
 
-            HenshinValidator validator = new HenshinValidator(annotationPackage);
+            HenshinValidator validator
+                    = new HenshinValidator();
 
-            boolean parsed;
+            HenshinValidator.ParseResult result;
 
             try {
-                parsed = validator.parse(graph);
+
+                GraphModelBuilder builder
+                        = new GraphModelBuilder(
+                                validator.getModelPackage()
+                        );
+
+                EObject graph = builder.build(input);
+
+                result = validator.parse(graph);
+
             } finally {
                 validator.shutdown();
             }
 
-            boolean valid = parsed;
-
-            sendJson(exchange,200,Map.of("valid", valid,"parsed", parsed));
+            sendJson(
+                    exchange,
+                    200,
+                    Map.of(
+                            "valid", result.isValid(),
+                            "parsed", result.isParsed(),
+                            "fully_parsed", result.isFullyParsed(),
+                            "remaining",
+                            Map.of(
+                                    "personas",
+                                    result.getRemainingPersonas(),
+                                    "actions",
+                                    result.getRemainingActions(),
+                                    "entities",
+                                    result.getRemainingEntities()
+                            )
+                    )
+            );
 
         } catch (IllegalArgumentException exception) {
-            sendJson(exchange,400,Map.of("valid", false,"message", exception.getMessage()));
+            sendJson(exchange, 400, Map.of("valid", false, "message", exception.getMessage()));
 
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -98,20 +124,20 @@ public final class HenshinHttpServer {
             sendJson(
                     exchange,
                     500,
-                    Map.of("valid", false,"message", "Henshin validation failed.","error", exception.getMessage() == null? exception.getClass().getSimpleName(): exception.getMessage())
+                    Map.of("valid", false, "message", "Henshin validation failed.", "error", exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage())
             );
         }
     }
 
     private void exportXmi(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendJson(exchange,405,Map.of("message", "Method not allowed."));
+            sendJson(exchange, 405, Map.of("message", "Method not allowed."));
             return;
         }
 
         try {
             System.out.println("XMI 1: request received");
-            InternalGraph input = OBJECT_MAPPER.readValue(exchange.getRequestBody(),InternalGraph.class);
+            InternalGraph input = OBJECT_MAPPER.readValue(exchange.getRequestBody(), InternalGraph.class);
 
             System.out.println("XMI 2: JSON parsed");
 
@@ -124,11 +150,11 @@ public final class HenshinHttpServer {
 
             resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
 
-            resourceSet.getPackageRegistry().put(XMLTypePackage.eNS_URI,XMLTypePackage.eINSTANCE);
+            resourceSet.getPackageRegistry().put(XMLTypePackage.eNS_URI, XMLTypePackage.eINSTANCE);
 
-            resourceSet.getPackageRegistry().put(XMLNamespacePackage.eNS_URI,XMLNamespacePackage.eINSTANCE);
+            resourceSet.getPackageRegistry().put(XMLNamespacePackage.eNS_URI, XMLNamespacePackage.eINSTANCE);
 
-            resourceSet.getPackageRegistry().put(annotationPackage.getNsURI(),annotationPackage);
+            resourceSet.getPackageRegistry().put(annotationPackage.getNsURI(), annotationPackage);
 
             // Resource.Factory.Registry.INSTANCE
             //         .getExtensionToFactoryMap()
@@ -154,9 +180,9 @@ public final class HenshinHttpServer {
 
             System.out.println("XMI 7: sending response, bytes = " + body.length);
 
-            exchange.getResponseHeaders().set("Content-Type","application/xml; charset=UTF-8");
+            exchange.getResponseHeaders().set("Content-Type", "application/xml; charset=UTF-8");
 
-            exchange.getResponseHeaders().set("Content-Disposition","attachment; filename=\"annotation-graph.xmi\"");
+            exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"annotation-graph.xmi\"");
 
             exchange.sendResponseHeaders(200, body.length);
 
@@ -191,7 +217,7 @@ public final class HenshinHttpServer {
                     ? cause.getClass().getName()
                     : cause.getClass().getName() + ": " + cause.getMessage();
 
-            sendJson(exchange,500,
+            sendJson(exchange, 500,
                     Map.of(
                             "valid", false,
                             "message", "XMI export failed.",
@@ -207,25 +233,25 @@ public final class HenshinHttpServer {
                 .getExtensionToFactoryMap()
                 .put("ecore", new EcoreResourceFactoryImpl());
 
-        URL metamodelUrl = Objects.requireNonNull(HenshinHttpServer.class.getClassLoader().getResource("parsingAnnotationGraphs.ecore"),"parsingAnnotationGraphs.ecore was not found");
+        URL metamodelUrl = Objects.requireNonNull(HenshinHttpServer.class.getClassLoader().getResource("parsingAnnotationGraphs.ecore"), "parsingAnnotationGraphs.ecore was not found");
 
         ResourceSet resourceSet = new ResourceSetImpl();
 
-        resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI,EcorePackage.eINSTANCE);
+        resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
 
-        EPackage.Registry.INSTANCE.put(EcorePackage.eNS_URI,EcorePackage.eINSTANCE);
+        EPackage.Registry.INSTANCE.put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
 
-        EPackage.Registry.INSTANCE.put(EcorePackage.eNS_URI,EcorePackage.eINSTANCE);
+        EPackage.Registry.INSTANCE.put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
 
-        EPackage.Registry.INSTANCE.put(XMLTypePackage.eNS_URI,XMLTypePackage.eINSTANCE);
+        EPackage.Registry.INSTANCE.put(XMLTypePackage.eNS_URI, XMLTypePackage.eINSTANCE);
 
-        EPackage.Registry.INSTANCE.put(XMLNamespacePackage.eNS_URI,XMLNamespacePackage.eINSTANCE);
+        EPackage.Registry.INSTANCE.put(XMLNamespacePackage.eNS_URI, XMLNamespacePackage.eINSTANCE);
 
-        Resource resource = resourceSet.getResource(URI.createURI(metamodelUrl.toString()),true);
+        Resource resource = resourceSet.getResource(URI.createURI(metamodelUrl.toString()), true);
 
         EPackage modelPackage = (EPackage) resource.getContents().get(0);
 
-        resourceSet.getPackageRegistry().put(modelPackage.getNsURI(),modelPackage);
+        resourceSet.getPackageRegistry().put(modelPackage.getNsURI(), modelPackage);
 
         return modelPackage;
     }

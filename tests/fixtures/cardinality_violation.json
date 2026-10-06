@@ -1,0 +1,42 @@
+{
+  "PID": "#TEST-CARDINALITY#",
+  "Text": "#TEST-CARDINALITY# As a User, I want to create and review a report.",
+  "Persona": [
+    "User"
+  ],
+  "Action": {
+    "Primary Action": [
+      "create",
+      "review"
+    ],
+    "Secondary Action": []
+  },
+  "Entity": {
+    "Primary Entity": [
+      "report"
+    ],
+    "Secondary Entity": []
+  },
+  "Benefit": "I can use it",
+  "Triggers": [
+    [
+      "User",
+      "create"
+    ],
+    [
+      "User",
+      "review"
+    ]
+  ],
+  "Targets": [
+    [
+      "create",
+      "report"
+    ],
+    [
+      "review",
+      "report"
+    ]
+  ],
+  "Contains": []
+}
