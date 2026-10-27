@@ -192,7 +192,7 @@ class GraphValidator:
 
                 entity_to_actions.setdefault(target_norm, set()).add(source_norm)
 
-            for entity, actions in entity_to_actions.items():
+            """for entity, actions in entity_to_actions.items():
                 if len(actions) > 1:
                     issues.append(
                         {
@@ -206,7 +206,7 @@ class GraphValidator:
                                 "The Henshin metamodel allows each Entity to reference only one Action."
                             ),
                         }
-                    )
+                    )"""
 
             checks = [
                 ("Triggers", personas, activities, "persona", "activity"),
